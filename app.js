@@ -1,7 +1,7 @@
 // --- API SERVICE ---
 const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
   ? 'http://localhost:5000/api'
-  : 'https://syudyhubbackend.onrender.com//api'; // CHANGE THIS TO YOUR DEPLOYED BACKEND URL ON RENDER
+  : 'https://syudyhubbackend.onrender.com/api'; // CHANGE THIS TO YOUR DEPLOYED BACKEND URL ON RENDER
 
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem('token');
