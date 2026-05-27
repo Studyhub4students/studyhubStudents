@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studyhub - Notes, Papers, and Resources</title>
+  <meta name="description" content="A comprehensive academic sharing resource hub for notes, PYQs, and textbooks.">
+  <link rel="stylesheet" href="/style.css?v=1.0.3">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<style>
+  .logo-image{
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+  }
+</style>
+<body>
+  <div class="app-container">
+    <!-- Navbar -->
+    <header class="navbar">
+      <a href="#/" class="logo">
+        <div class="logoimg">
+          <img src="logo.png" alt="logo" class="logo-image" />
+        </div>
+        <!-- <div class="logo-dot"></div> -->
+        <span>Study Hub</span>
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <nav class="nav-links desktop-nav">
+        <a href="#/" class="nav-link" id="nav-home">Home</a>
+        <a href="#/notes" class="nav-link" id="nav-notes">Notes</a>
+        <a href="#/papers" class="nav-link" id="nav-papers">Papers</a>
+        <a href="#/resources" class="nav-link" id="nav-resources">Resources</a>
+        <a href="#/my-uploads" class="nav-link" id="nav-my-uploads" style="display: none; align-items: center; gap: 4px;">
+          <i data-lucide="folder-heart" style="width: 16px; height: 16px;"></i> My Uploads
+        </a>
+        <a href="#/admin" class="nav-link" id="nav-admin" style="display: none; align-items: center; gap: 4px;">
+          <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i> Admin
+        </a>
+
+        <!-- Auth state container -->
+        <div id="nav-auth-container" style="display: flex; align-items: center;">
+          <!-- Will be populated by app.js -->
+        </div>
+      </nav>
+
+      <!-- Hamburger Button (Mobile Only) -->
+      <button id="btn-hamburger" class="btn-hamburger" aria-label="Toggle Navigation Menu">
+        <i data-lucide="menu"></i>
+      </button>
+    </header>
+
+    <!-- Mobile Navigation Drawer Overlay -->
+    <div id="mobile-nav-overlay" class="mobile-nav-overlay"></div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-nav-menu" class="mobile-nav-menu">
+      <!-- Dynamically filled by app.js -->
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="main-content" id="main-mount">
+      
+      <!-- LOADING SCREEN -->
+      <div id="view-loading" class="page-view" style="display: flex; justify-content: center; align-items: center; min-height: 50vh;">
+        <div style="text-align: center;">
+          <div style="width: 40px; height: 40px; border: 4px solid var(--primary-accent); border-top-color: #1e56a0; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+          <h3>Study Hub is loading...</h3>
+          <style>
+            @keyframes spin { to { transform: rotate(360deg); } }
+            .page-view { display: none; width: 100%; }
+          </style>
+        </div>
+      </div>
+
+      <!-- HOME PAGE VIEW -->
+      <div id="view-home" class="page-view">
+        <div class="home-container">
+          <!-- Hero Section -->
+          <section class="hero">
+            <div class="hero-content">
+              <h1>
+                All Your <span style="color: var(--primary);">Study</span><br />
+                Notes & Papers in<br />
+                One Place
+              </h1>
+              <p>
+                A study hub for students. Access notes, previous year papers, lab
+                manuals and more – organized semester-wise for our juniors.
+              </p>
+              <div class="hero-actions">
+                <a href="#/notes" class="btn btn-primary">Browse Notes</a>
+                <a href="#/papers" class="btn btn-secondary">Previous Year Papers</a>
+              </div>
+            </div>
+
+            <!-- Why card -->
+            <div class="why-card">
+              <h3>Why Study Hub?</h3>
+              <ul class="why-list">
+                <li class="why-item">
+                  <span class="why-icon"><i data-lucide="check-square" style="width: 18px; height: 18px; color: var(--success);"></i></span>
+                  <span>First-year friendly</span>
+                </li>
+                <li class="why-item">
+                  <span class="why-icon"><i data-lucide="check-square" style="width: 18px; height: 18px; color: var(--success);"></i></span>
+                  <span>Subject-wise notes & PYQs</span>
+                </li>
+                <li class="why-item">
+                  <span class="why-icon"><i data-lucide="check-square" style="width: 18px; height: 18px; color: var(--success);"></i></span>
+                  <span>Fast access via Google Drive PDFs</span>
+                </li>
+                <li class="why-item">
+                  <span class="why-icon"><i data-lucide="check-square" style="width: 18px; height: 18px; color: var(--success);"></i></span>
+                  <span>Built by seniors for juniors</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Announcements Section -->
+          <section style="margin-top: 40px;">
+            <div class="announcements-header">
+              <h3 class="section-title">
+                <i data-lucide="megaphone" style="color: var(--primary); width: 24px; height: 24px;"></i>
+                Latest Announcements
+              </h3>
+              <button id="btn-add-announcement" class="btn btn-secondary btn-sm" style="display: none; align-items: center; gap: 4px;">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> <span id="text-add-announcement">Add Announcement</span>
+              </button>
+            </div>
+            
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 15px;">
+              Stay updated with the latest college and study updates
+            </p>
+
+            <!-- Add Announcement Form -->
+            <form id="form-announcement" class="card" style="display: none; margin-bottom: 24px; animation: modalEnter 0.2s ease;">
+              <h4 style="color: var(--primary-dark); margin-bottom: 16px;">New Announcement</h4>
+              <div class="form-group">
+                <label class="form-label" for="ann-title">Title</label>
+                <input type="text" id="ann-title" class="form-input" placeholder="e.g. End Semester Exam Dates" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ann-content">Content</label>
+                <textarea id="ann-content" class="form-input" style="min-height: 100px; resize: vertical;" placeholder="Details of the announcement..." required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Post Announcement</button>
+            </form>
+
+            <div id="announcements-list-container">
+              <!-- Rendered via JS -->
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- LOGIN VIEW -->
+      <div id="view-login" class="page-view">
+        <div class="auth-container">
+          <div class="card auth-card">
+            <div class="auth-header">
+              <h2>Welcome Back</h2>
+              <p>Login to access your notes, PYQs, and resources</p>
+            </div>
+
+            <div id="login-error-alert" class="alert alert-danger" style="display: none;"></div>
+
+            <form id="form-login">
+              <div class="form-group">
+                <label class="form-label" for="login-phone">Phone Number</label>
+                <div style="position: relative;">
+                  <i data-lucide="phone" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px;"></i>
+                  <input id="login-phone" type="tel" class="form-input" style="padding-left: 44px;" placeholder="Enter 10-digit number" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="login-password">Password</label>
+                <div style="position: relative;">
+                  <i data-lucide="lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px;"></i>
+                  <input id="login-password" type="password" class="form-input" style="padding-left: 44px; padding-right: 44px;" placeholder="••••••••" required />
+                  <button type="button" id="btn-show-login-password" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; padding: 0;" title="Show Password">
+                    <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                <span id="login-btn-content" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Login
+                </span>
+              </button>
+            </form>
+
+            <div class="form-footer">
+              Don't have an account? <a href="#/signup">Sign Up</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGNUP VIEW -->
+      <div id="view-signup" class="page-view">
+        <div class="auth-container">
+          <div class="card auth-card">
+            <div class="auth-header">
+              <h2>Create Account</h2>
+              <p>Join Studyhub to manage and download papers & notes</p>
+            </div>
+
+            <div id="signup-error-alert" class="alert alert-danger" style="display: none;"></div>
+            <div id="signup-success-alert" class="alert alert-success" style="display: none; align-items: flex-start; gap: 8px;">
+              <i data-lucide="check-circle" style="flex-shrink: 0; margin-top: 2px; width: 20px; height: 20px;"></i>
+              <span id="signup-success-text"></span>
+            </div>
+
+            <form id="form-signup">
+              <div class="form-group">
+                <label class="form-label" for="signup-name">Full Name</label>
+                <div style="position: relative;">
+                  <i data-lucide="user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px;"></i>
+                  <input id="signup-name" type="text" class="form-input" style="padding-left: 44px;" placeholder="John Doe" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="signup-phone">Phone Number</label>
+                <div style="position: relative;">
+                  <i data-lucide="phone" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px;"></i>
+                  <input id="signup-phone" type="tel" class="form-input" style="padding-left: 44px;" placeholder="Enter 10-digit number" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="signup-password">Password</label>
+                <div style="position: relative;">
+                  <i data-lucide="lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px;"></i>
+                  <input id="signup-password" type="password" class="form-input" style="padding-left: 44px; padding-right: 44px;" placeholder="Min 6 characters" required />
+                  <button type="button" id="btn-show-signup-password" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; padding: 0;" title="Show Password">
+                    <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="signup-role">Register As</label>
+                <div style="position: relative;">
+                  <i data-lucide="user-cog" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px; pointer-events: none; z-index: 10;"></i>
+                  <select id="signup-role" class="form-input" style="padding-left: 44px; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'m6 9 6 6 6-6\'/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; padding-right: 40px;" required>
+                    <option value="student">Student</option>
+                    <option value="educator">Educator (Teacher)</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <span id="signup-role-hint" style="font-size: 11px; color: var(--text-muted); marginTop: 6px; display: block;">
+                  ✓ Instant approval. Get immediate access.
+                </span>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                <span id="signup-btn-content" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Register
+                </span>
+              </button>
+            </form>
+
+            <div class="form-footer">
+              Already have an account? <a href="#/login">Login</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTES VIEW -->
+      <div id="view-notes" class="page-view">
+        <div class="folder-page-header">
+          <div class="folder-breadcrumbs" id="notes-breadcrumbs">
+            <!-- Populated dynamically -->
+          </div>
+          <div id="notes-header-actions">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div id="notes-content-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- PAPERS VIEW -->
+      <div id="view-papers" class="page-view">
+        <div class="folder-page-header">
+          <div class="folder-breadcrumbs" id="papers-breadcrumbs">
+            <!-- Populated dynamically -->
+          </div>
+          <div id="papers-header-actions">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div id="papers-content-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- RESOURCES VIEW -->
+      <div id="view-resources" class="page-view">
+        <div class="folder-page-header">
+          <div class="folder-breadcrumbs" id="resources-breadcrumbs">
+            <!-- Populated dynamically -->
+          </div>
+          <div id="resources-header-actions">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div id="resources-content-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- ADMIN DASHBOARD VIEW -->
+      <div id="view-admin" class="page-view">
+        <div class="folder-page-header">
+          <div class="folder-breadcrumbs">
+            <span class="breadcrumb-active" style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="shield-check" style="color: var(--primary); width: 22px; height: 22px;"></i> 
+              Control Panel (<span id="admin-panel-role-label">Admin</span>)
+            </span>
+          </div>
+        </div>
+
+        <div id="admin-error-alert" class="alert alert-danger" style="display: none;"></div>
+
+        <div class="dashboard-grid">
+          <!-- Pending Approvals -->
+          <div>
+            <h3 class="section-title" style="margin-bottom: 16px; font-size: 20px;">
+              <i data-lucide="shield-alert" style="color: var(--warning); width: 20px; height: 20px;"></i> 
+              Pending Approvals (<span id="pending-users-count">0</span>)
+            </h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">
+              Educators and admins require registration approval before accessing Studyhub contents.
+            </p>
+            <div id="pending-users-list-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- User Directory -->
+          <div>
+            <h3 class="section-title" style="margin-bottom: 16px; font-size: 20px;">
+              <i data-lucide="users" style="color: var(--primary); width: 20px; height: 20px;"></i> 
+              User Directory (<span id="all-users-count">0</span>)
+            </h3>
+            <p id="admin-directory-hint" style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">
+              Admin view: You can manage and delete Student accounts only.
+            </p>
+            <div class="calculator-tabs" id="directory-tabs" style="margin-bottom: 20px;">
+              <!-- Dynamic tabs loaded here -->
+            </div>
+            <div id="all-users-list-container" class="users-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY UPLOADS VIEW -->
+      <div id="view-my-uploads" class="page-view">
+        <div class="folder-page-header">
+          <div class="folder-breadcrumbs">
+            <span class="breadcrumb-active" style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="folder-heart" style="color: var(--primary); width: 22px; height: 22px;"></i> 
+              My Uploaded Documents
+            </span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px;">
+          <p style="color: var(--text-muted); font-size: 15px; margin: 0;">
+            Below is the list of documents (notes, papers, textbooks) that you have uploaded. You can view, edit, or delete them.
+          </p>
+          <div class="search-input-wrapper" style="max-width: 400px; margin-top: 10px;">
+            <i data-lucide="search" class="search-input-icon" style="width: 18px; height: 18px;"></i>
+            <input type="text" id="my-uploads-search" class="form-input search-input" placeholder="Search your uploads..." />
+          </div>
+        </div>
+
+        <div id="my-uploads-list-container" class="docs-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div>
+        <p style="font-weight: 700; font-size: 16px; margin-bottom: 8px;">Studyhub</p>
+        <p>A central academic repository for students.</p>
+        <p style="font-size: 12px; opacity: 0.6;">&copy; <span id="footer-year">2026</span> Studyhub. Built for juniors, by seniors.</p>
+      </div>
+      <div class="footer-links">
+        <a href="#privacy" class="footer-link">Privacy Policy</a>
+        <span style="opacity: 0.3;">|</span>
+        <a href="#terms" class="footer-link">Terms of Service</a>
+        <span style="opacity: 0.3;">|</span>
+        <a href="mailto:support@studyhub.edu" class="footer-link">Contact Support</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- --- SYSTEM MODALS --- -->
+
+  <!-- 1. Folder Modal (Create / Rename subject folder) -->
+  <div id="modal-folder" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-folder-title">Add Subject Folder</h3>
+        <button id="modal-folder-close" class="modal-close">&times;</button>
+      </div>
+      <form id="form-folder">
+        <input type="hidden" id="modal-folder-id" value="">
+        <input type="hidden" id="modal-folder-section-type" value=""> <!-- notes/papers/lab_manuals/books -->
+        <div class="form-group">
+          <label class="form-label" for="modal-folder-name">Subject Name</label>
+          <input type="text" id="modal-folder-name" class="form-input" placeholder="e.g. Engineering Mathematics II" required />
+        </div>
+        <div class="form-actions">
+          <button type="button" id="modal-folder-cancel" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Upload Document Modal -->
+  <div id="modal-upload" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-upload-title">Upload PDF</h3>
+        <button id="modal-upload-close" class="modal-close">&times;</button>
+      </div>
+      <div id="upload-error-alert" class="alert alert-danger" style="display: none;"></div>
+      <form id="form-upload">
+        <input type="hidden" id="upload-section-type" value=""> <!-- notes/paper/lab_manual/book/syllabus -->
+        <input type="hidden" id="upload-folder-id" value="">
+        <input type="hidden" id="upload-folder-name" value="">
+
+        <div class="form-group">
+          <label class="form-label" for="upload-doc-title">Document Title</label>
+          <input type="text" id="upload-doc-title" class="form-input" placeholder="e.g. Unit 1 Notes" required />
+        </div>
+
+        <div class="form-group" id="upload-subject-display-group">
+          <label class="form-label" for="upload-doc-subject-display">Subject</label>
+          <input type="text" id="upload-doc-subject-display" class="form-input" value="" disabled />
+        </div>
+
+        <!-- Subject selection dropdown, visible ONLY for syllabus uploads -->
+        <div class="form-group" id="upload-syllabus-subject-group" style="display: none;">
+          <label class="form-label" for="upload-syllabus-subject-select">Subject Tag</label>
+          <select id="upload-syllabus-subject-select" class="form-select">
+            <option value="Syllabus">General Syllabus</option>
+            <!-- Filled dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="upload-doc-year">Academic Year</label>
+          <select id="upload-doc-year" class="form-select">
+            <!-- Dynamic academic years populated here -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Select PDF Document</label>
+          <div id="upload-drag-box" class="file-upload-box">
+            <i data-lucide="upload-cloud" class="file-upload-icon" style="width: 30px; height: 30px;"></i>
+            <p style="font-size: 14px; font-weight: 600;" id="upload-file-label">Click to browse files</p>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Only PDF documents are allowed</p>
+            <input type="file" id="upload-file-input" accept="application/pdf" style="display: none;" required />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="modal-upload-cancel" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-upload-submit">Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Edit Document Modal -->
+  <div id="modal-edit-document" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Document Details</h3>
+        <button id="modal-edit-document-close" class="modal-close">&times;</button>
+      </div>
+      <div id="edit-doc-error-alert" class="alert alert-danger" style="display: none;"></div>
+      <form id="form-edit-document">
+        <input type="hidden" id="edit-doc-id" value="">
+
+        <div class="form-group">
+          <label class="form-label" for="edit-doc-title">Document Title</label>
+          <input type="text" id="edit-doc-title" class="form-input" placeholder="e.g. Unit 1 Notes" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-doc-subject">Subject</label>
+          <input type="text" id="edit-doc-subject" class="form-input" placeholder="e.g. Mathematics II" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-doc-year">Academic Year</label>
+          <select id="edit-doc-year" class="form-select">
+            <!-- Dynamic academic years populated here -->
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="modal-edit-document-cancel" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-edit-document-submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js?v=1.0.3"></script>
+</body>
+</html>
