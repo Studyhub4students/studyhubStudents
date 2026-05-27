@@ -1169,7 +1169,7 @@ body {
     gap: 10px;
     box-shadow: -4px 0 25px rgba(14, 56, 122, 0.15);
     transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow: hidden;
+    overflow-y: auto;
   }
   
   .mobile-nav-menu.open {
@@ -1415,5 +1415,19 @@ body {
 .profile-logout-btn {
   width: 100%;
   margin-top: 4px;
+}
+
+/* Compact layout styling overrides for small screens */
+@media (max-width: 480px) {
+  .profile-dropdown-btn span {
+    max-width: 75px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .profile-dropdown-btn {
+    padding: 8px 12px;
+    gap: 4px;
+  }
 }
 
