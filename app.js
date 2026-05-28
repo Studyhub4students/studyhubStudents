@@ -229,6 +229,23 @@ const api = {
     return await request(`/notifications/read/${id}`, {
       method: 'POST'
     });
+  },
+
+  async getMessageTemplates() {
+    return await request('/notifications/templates');
+  },
+
+  async saveMessageTemplate(name, content) {
+    return await request('/notifications/templates', {
+      method: 'POST',
+      body: { name, content }
+    });
+  },
+
+  async deleteMessageTemplate(id) {
+    return await request(`/notifications/templates/${id}`, {
+      method: 'DELETE'
+    });
   }
 };
 
@@ -2033,6 +2050,7 @@ async function renderAdminDashboardView() {
             userIdInput.value = userId;
             nameInput.value = userName;
             modal.style.display = 'flex';
+            renderMessageTemplates();
           }
         });
       });
@@ -2947,6 +2965,21 @@ function initEventHandlers() {
     });
   }
 
+  const btnSaveTemplate = document.getElementById('btn-save-as-template');
+  if (btnSaveTemplate) {
+    btnSaveTemplate.addEventListener('click', () => {
+      const textarea = document.getElementById('send-message-body');
+      if (!textarea || !textarea.value.trim()) {
+        alert('Please write some text in the message body first to save as a template.');
+        return;
+      }
+      const name = prompt('Enter a name for this template:');
+      if (name && name.trim()) {
+        saveMessageTemplate(name.trim(), textarea.value.trim());
+      }
+    });
+  }
+
   // 7. MY UPLOADS SEARCH
   const myUploadsSearch = document.getElementById('my-uploads-search');
   if (myUploadsSearch) {
@@ -3125,6 +3158,53 @@ function stopNotificationPolling() {
   if (notificationPollInterval) {
     clearInterval(notificationPollInterval);
     notificationPollInterval = null;
+  }
+}
+
+// --- MESSAGE TEMPLATES SYSTEM ---
+let messageTemplatesList = [];
+
+async function saveMessageTemplate(name, content) {
+  try {
+    await api.saveMessageTemplate(name, content);
+    await renderMessageTemplates();
+  } catch (err) {
+    alert(err.message || 'Failed to save template');
+  }
+}
+
+async function renderMessageTemplates() {
+  const container = document.getElementById('quick-templates-container');
+  if (!container) return;
+  
+  container.innerHTML = '<span style="font-size: 11px; color: var(--text-muted);">Loading templates...</span>';
+
+  try {
+    messageTemplatesList = await api.getMessageTemplates();
+    if (messageTemplatesList.length === 0) {
+      container.innerHTML = '<span style="font-size: 11px; color: var(--text-muted);">No templates saved.</span>';
+      return;
+    }
+
+    container.innerHTML = messageTemplatesList.map((t, idx) => `
+      <button type="button" class="btn btn-secondary btn-sm btn-select-template" data-index="${idx}" style="font-size: 11px; padding: 4px 8px; background-color: #f1f5f9; border-color: #e2e8f0; color: #475569;">
+        ${escapeHTML(t.name)}
+      </button>
+    `).join('');
+    
+    container.querySelectorAll('.btn-select-template').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = btn.getAttribute('data-index');
+        const target = messageTemplatesList[idx];
+        const textarea = document.getElementById('send-message-body');
+        if (textarea && target) {
+          textarea.value = target.content;
+        }
+      });
+    });
+  } catch (err) {
+    console.error('Error rendering templates:', err);
+    container.innerHTML = '<span style="font-size: 11px; color: var(--danger);">Failed to load templates.</span>';
   }
 }
 
