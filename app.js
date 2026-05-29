@@ -694,9 +694,6 @@ async function renderHomeView() {
                     ${escapeHTML(capitalizeName(t.name))}
                   </span>
                 </div>
-                <span class="user-tag" style="font-size: 11px; font-weight: 700; background-color: var(--primary-accent); color: var(--primary-dark); padding: 2px 6px;">
-                  ${t.points} pts
-                </span>
               </div>
             `;
           }).join('');
