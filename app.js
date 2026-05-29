@@ -263,6 +263,18 @@ const api = {
       method: 'PUT',
       body: { message }
     });
+  },
+
+  async toggleLikeDocument(docId) {
+    return await request(`/documents/${docId}/like`, { method: 'POST' });
+  },
+
+  async getTeacherRanking() {
+    return await request('/auth/teachers/ranking');
+  },
+
+  async getTeacherStats() {
+    return await request('/auth/teachers/stats');
   }
 };
 
@@ -273,6 +285,7 @@ let currentNotesFolder = null;
 let currentPapersFolder = null;
 let currentResourcesFolder = null;
 let currentResourcesSection = 'root'; // 'root' | 'syllabus' | 'lab_manuals' | 'lab_manuals_folder' | 'books' | 'books_folder' | 'calculator'
+let roadmapFolderStack = [];
 let notesFoldersList = []; // Kept in memory to populate syllabus uploads
 let activeDirectoryTab = 'admin'; // 'admin' | 'teacher' | 'student'
 let directoryVisibleCount = 5;
@@ -360,6 +373,16 @@ function updateNavbar() {
       }
     }
 
+    // Show Teacher Dashboard tab for educators only
+    const teacherDashboardTab = document.getElementById('nav-teacher-dashboard');
+    if (teacherDashboardTab) {
+      if (currentUser.role === 'educator') {
+        teacherDashboardTab.style.display = 'flex';
+      } else {
+        teacherDashboardTab.style.display = 'none';
+      }
+    }
+
     // Populate Desktop Auth State
     container.innerHTML = `
       <div class="profile-dropdown-wrapper">
@@ -434,6 +457,9 @@ function updateNavbar() {
         <a href="#/support" class="mobile-nav-link" id="mob-nav-support"><i data-lucide="help-circle" style="width: 18px; height: 18px;"></i> Help & Support</a>
         ${(currentUser.role === 'educator' || currentUser.role === 'admin' || currentUser.role === 'superadmin') ? `
           <a href="#/my-uploads" class="mobile-nav-link" id="mob-nav-my-uploads"><i data-lucide="folder-heart" style="width: 18px; height: 18px;"></i> My Uploads</a>
+        ` : ''}
+        ${currentUser.role === 'educator' ? `
+          <a href="#/teacher-dashboard" class="mobile-nav-link" id="mob-nav-teacher-dashboard"><i data-lucide="presentation" style="width: 18px; height: 18px;"></i> Teacher Dashboard</a>
         ` : ''}
         ${(currentUser.role === 'admin' || currentUser.role === 'superadmin') ? `
           <a href="#/admin" class="mobile-nav-link" id="mob-nav-admin"><i data-lucide="shield-alert" style="width: 18px; height: 18px;"></i> Admin</a>
@@ -525,6 +551,10 @@ function handleAuthProtection(hash) {
     navigate('#/');
     return false;
   }
+  if (hash === '#/teacher-dashboard' && currentUser && currentUser.role !== 'educator') {
+    navigate('#/');
+    return false;
+  }
   return true;
 }
 
@@ -612,6 +642,9 @@ async function router() {
   } else if (hash === '#/support') {
     document.getElementById('view-support').style.display = 'block';
     await renderSupportView();
+  } else if (hash === '#/teacher-dashboard') {
+    document.getElementById('view-teacher-dashboard').style.display = 'block';
+    await renderTeacherDashboardView();
   }
 
   lucide.createIcons();
@@ -631,6 +664,48 @@ async function renderHomeView() {
   } else {
     addAnnBtn.style.display = 'none';
     annForm.style.display = 'none';
+  }
+
+  // Load and render teacher rankings on the leaderboard card
+  const leaderboardList = document.getElementById('teacher-ranking-list');
+  if (leaderboardList) {
+    leaderboardList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted);">Loading leaderboard...</div>';
+    api.getTeacherRanking()
+      .then(ranking => {
+        const topRanking = ranking.slice(0, 10);
+        if (topRanking.length === 0) {
+          leaderboardList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 10px 0;">No educators ranked yet</div>';
+        } else {
+          leaderboardList.innerHTML = topRanking.map((t, index) => {
+            const rankNum = index + 1;
+            let trophy = '';
+            if (rankNum === 1) trophy = '🏆';
+            else if (rankNum === 2) trophy = '🥈';
+            else if (rankNum === 3) trophy = '🥉';
+
+            const isSelf = currentUser && currentUser.id === t.id;
+            const bgStyle = isSelf ? 'background-color: rgba(34, 197, 94, 0.05);' : '';
+
+            return `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); ${bgStyle} font-size: 13px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-weight: 800; min-width: 24px;">#${rankNum}${trophy ? ' ' + trophy : ''}</span>
+                  <span style="font-weight: 500; color: var(--primary-dark); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${escapeHTML(capitalizeName(t.name))}
+                  </span>
+                </div>
+                <span class="user-tag" style="font-size: 11px; font-weight: 700; background-color: var(--primary-accent); color: var(--primary-dark); padding: 2px 6px;">
+                  ${t.points} pts
+                </span>
+              </div>
+            `;
+          }).join('');
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load home leaderboard:', err);
+        leaderboardList.innerHTML = '<div style="font-size: 11px; color: var(--danger);">Failed to load rankings</div>';
+      });
   }
 
   container.innerHTML = `<div class="empty-state">Loading announcements...</div>`;
@@ -856,7 +931,13 @@ async function renderNotesView() {
         <h3 style="color: var(--primary-dark); margin-bottom: 16px;">Notes for ${escapeHTML(currentNotesFolder.name)}</h3>
         <div class="docs-list">
           ${docs.map(doc => `
-            <div class="doc-card">
+            <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative;">
+              ${doc.isUploadedByTeacher ? `
+                <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                  <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                  <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+                </button>
+              ` : ''}
               <div class="doc-info">
                 <div class="doc-icon-container">
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -907,6 +988,12 @@ async function renderNotesView() {
             btn.innerHTML = originalHTML;
             lucide.createIcons();
           }
+        });
+      });
+
+      document.querySelectorAll('.btn-like-doc').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          handleLikeToggle(e, renderNotesView);
         });
       });
 
@@ -1114,7 +1201,13 @@ async function renderPapersView() {
           listHTML = `
             <div class="docs-list">
               ${filtered.map(doc => `
-                <div class="doc-card" style="border-left: 4px solid #0284c7;">
+                <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative; border-left: 4px solid #0284c7;">
+                  ${doc.isUploadedByTeacher ? `
+                    <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                      <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                      <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+                    </button>
+                  ` : ''}
                   <div class="doc-info">
                     <div class="doc-icon-container" style="background-color: #e0f2fe; color: #0284c7;">
                       <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -1192,6 +1285,13 @@ async function renderPapersView() {
             }
           });
         });
+
+        // Re-attach Like handler
+        document.querySelectorAll('.btn-like-doc').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            handleLikeToggle(e, renderPapersView);
+          });
+        });
         lucide.createIcons();
       };
 
@@ -1213,6 +1313,7 @@ function backToPapersFolders() {
 async function renderResourcesView() {
   localStorage.setItem('currentResourcesSection', currentResourcesSection);
   localStorage.setItem('currentResourcesFolder', JSON.stringify(currentResourcesFolder));
+  localStorage.setItem('roadmapFolderStack', JSON.stringify(roadmapFolderStack));
   const breadcrumbs = document.getElementById('resources-breadcrumbs');
   const actions = document.getElementById('resources-header-actions');
   const content = document.getElementById('resources-content-container');
@@ -1224,22 +1325,39 @@ async function renderResourcesView() {
   let crumbsHTML = `<span class="breadcrumb-item ${currentResourcesSection === 'root' ? 'breadcrumb-active' : ''}" id="crumb-resources-root">Resources</span>`;
   let actionsHTML = '';
 
-  if (currentResourcesSection !== 'root') {
-    crumbsHTML += `
-      <i data-lucide="chevron-right" class="breadcrumb-separator" style="width: 16px; height: 16px;"></i>
-      <span class="breadcrumb-item ${!currentResourcesFolder ? 'breadcrumb-active' : ''}" id="crumb-resources-section">
-        ${currentResourcesSection === 'syllabus' ? 'Syllabus' : ''}
-        ${currentResourcesSection.startsWith('lab_manuals') ? 'Lab Manuals' : ''}
-        ${currentResourcesSection.startsWith('books') ? 'Books' : ''}
-        ${currentResourcesSection === 'calculator' ? 'SGPA & CGPA Calculator' : ''}
-      </span>
-    `;
+  const isStaffOrEducator = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin' || currentUser.role === 'educator');
 
-    if (currentResourcesFolder) {
+  if (currentResourcesSection !== 'root') {
+    if (currentResourcesSection === 'roadmaps') {
       crumbsHTML += `
         <i data-lucide="chevron-right" class="breadcrumb-separator" style="width: 16px; height: 16px;"></i>
-        <span class="breadcrumb-active">${escapeHTML(currentResourcesFolder.name)}</span>
+        <span class="breadcrumb-item ${!currentResourcesFolder ? 'breadcrumb-active' : ''}" id="crumb-resources-section">Roadmaps</span>
       `;
+      roadmapFolderStack.forEach((folder, idx) => {
+        const isLast = idx === roadmapFolderStack.length - 1;
+        crumbsHTML += `
+          <i data-lucide="chevron-right" class="breadcrumb-separator" style="width: 16px; height: 16px;"></i>
+          <span class="breadcrumb-item ${isLast ? 'breadcrumb-active' : ''} roadmap-crumb-item" data-idx="${idx}" style="cursor: pointer;">
+            ${escapeHTML(folder.name)}
+          </span>
+        `;
+      });
+    } else {
+      crumbsHTML += `
+        <i data-lucide="chevron-right" class="breadcrumb-separator" style="width: 16px; height: 16px;"></i>
+        <span class="breadcrumb-item ${!currentResourcesFolder ? 'breadcrumb-active' : ''}" id="crumb-resources-section">
+          ${currentResourcesSection === 'syllabus' ? 'Syllabus' : ''}
+          ${currentResourcesSection.startsWith('lab_manuals') ? 'Lab Manuals' : ''}
+          ${currentResourcesSection.startsWith('books') ? 'Books' : ''}
+          ${currentResourcesSection === 'calculator' ? 'SGPA & CGPA Calculator' : ''}
+        </span>
+      `;
+      if (currentResourcesFolder) {
+        crumbsHTML += `
+          <i data-lucide="chevron-right" class="breadcrumb-separator" style="width: 16px; height: 16px;"></i>
+          <span class="breadcrumb-active">${escapeHTML(currentResourcesFolder.name)}</span>
+        `;
+      }
     }
 
     // Header buttons
@@ -1248,12 +1366,12 @@ async function renderResourcesView() {
         <button class="btn btn-secondary" id="btn-resources-back">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Back
         </button>
-        ${isAdmin && (currentResourcesSection === 'lab_manuals' || currentResourcesSection === 'books') ? `
+        ${(isAdmin && (currentResourcesSection === 'lab_manuals' || currentResourcesSection === 'books')) || (isStaffOrEducator && currentResourcesSection === 'roadmaps') ? `
           <button class="btn btn-primary" id="btn-resources-add-folder" style="display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="folder-plus" style="width: 18px; height: 18px;"></i> Add Subject Folder
+            <i data-lucide="folder-plus" style="width: 18px; height: 18px;"></i> Add Folder
           </button>
         ` : ''}
-        ${isStaff && (currentResourcesSection === 'syllabus' || currentResourcesSection === 'lab_manuals_folder' || currentResourcesSection === 'books_folder') ? `
+        ${(isStaff && (currentResourcesSection === 'syllabus' || currentResourcesSection === 'lab_manuals_folder' || currentResourcesSection === 'books_folder')) || (isStaffOrEducator && currentResourcesSection === 'roadmaps' && currentResourcesFolder) ? `
           <button class="btn btn-primary" id="btn-resources-upload" style="display: flex; align-items: center; gap: 6px;">
             <i data-lucide="plus" style="width: 18px; height: 18px;"></i> Upload PDF
           </button>
@@ -1267,7 +1385,7 @@ async function renderResourcesView() {
 
   // Crumb clicks
   const crumbRoot = document.getElementById('crumb-resources-root');
-  if (crumbRoot) crumbRoot.addEventListener('click', () => { currentResourcesSection = 'root'; currentResourcesFolder = null; renderResourcesView(); });
+  if (crumbRoot) crumbRoot.addEventListener('click', () => { currentResourcesSection = 'root'; currentResourcesFolder = null; roadmapFolderStack = []; renderResourcesView(); });
 
   const crumbSection = document.getElementById('crumb-resources-section');
   if (crumbSection) crumbSection.addEventListener('click', () => {
@@ -1275,7 +1393,18 @@ async function renderResourcesView() {
       currentResourcesSection = currentResourcesSection.replace('_folder', '');
     }
     currentResourcesFolder = null;
+    roadmapFolderStack = [];
     renderResourcesView();
+  });
+
+  // Re-attach breadcrumbs stack handlers
+  document.querySelectorAll('.roadmap-crumb-item').forEach(crumb => {
+    crumb.addEventListener('click', () => {
+      const idx = parseInt(crumb.getAttribute('data-idx'));
+      roadmapFolderStack = roadmapFolderStack.slice(0, idx + 1);
+      currentResourcesFolder = roadmapFolderStack[roadmapFolderStack.length - 1];
+      renderResourcesView();
+    });
   });
 
   const backBtn = document.getElementById('btn-resources-back');
@@ -1296,6 +1425,10 @@ async function renderResourcesView() {
         folderName = currentResourcesFolder.name;
       } else if (currentResourcesSection === 'books_folder') {
         docType = 'book';
+        folderId = currentResourcesFolder.id;
+        folderName = currentResourcesFolder.name;
+      } else if (currentResourcesSection === 'roadmaps') {
+        docType = 'roadmap';
         folderId = currentResourcesFolder.id;
         folderName = currentResourcesFolder.name;
       }
@@ -1331,6 +1464,14 @@ async function renderResourcesView() {
           <p style="color: var(--text-muted); font-size: 14px;">Recommended textbooks, references, and digital libraries for engineering.</p>
         </div>
 
+        <div class="card resource-card-trigger" data-section="roadmaps" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 30px;">
+          <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #fae8ff; color: #a21caf; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+            <i data-lucide="map" style="width: 32px; height: 32px;"></i>
+          </div>
+          <h3 style="color: var(--primary-dark); font-size: 20px; font-weight: 700; margin-bottom: 10px;">Roadmaps</h3>
+          <p style="color: var(--text-muted); font-size: 14px;">Semester-wise maps, study routes, curriculum guides, and plans created by teachers & admins.</p>
+        </div>
+
         <div class="card resource-card-trigger" data-section="calculator" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 30px;">
           <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
             <i data-lucide="calculator" style="width: 32px; height: 32px;"></i>
@@ -1344,6 +1485,8 @@ async function renderResourcesView() {
     document.querySelectorAll('.resource-card-trigger').forEach(card => {
       card.addEventListener('click', () => {
         currentResourcesSection = card.getAttribute('data-section');
+        currentResourcesFolder = null;
+        roadmapFolderStack = [];
         renderResourcesView();
       });
     });
@@ -1369,7 +1512,13 @@ async function renderResourcesView() {
         <h3 style="color: var(--primary-dark); margin-bottom: 16px;">Syllabus Documents</h3>
         <div class="docs-list">
           ${docs.map(doc => `
-            <div class="doc-card">
+            <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative;">
+              ${doc.isUploadedByTeacher ? `
+                <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                  <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                  <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+                </button>
+              ` : ''}
               <div class="doc-info">
                 <div class="doc-icon-container">
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -1412,6 +1561,12 @@ async function renderResourcesView() {
             btn.innerHTML = originalHTML;
             lucide.createIcons();
           }
+        });
+      });
+
+      document.querySelectorAll('.btn-like-doc').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          handleLikeToggle(e, renderResourcesView);
         });
       });
 
@@ -1522,7 +1677,13 @@ async function renderResourcesView() {
         </h3>
         <div class="docs-list">
           ${docs.map(doc => `
-            <div class="doc-card">
+            <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative;">
+              ${doc.isUploadedByTeacher ? `
+                <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                  <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                  <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+                </button>
+              ` : ''}
               <div class="doc-info">
                 <div class="doc-icon-container">
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -1568,8 +1729,182 @@ async function renderResourcesView() {
         });
       });
 
+      document.querySelectorAll('.btn-like-doc').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          handleLikeToggle(e, renderResourcesView);
+        });
+      });
+
     } catch (err) {
       content.innerHTML = `<div class="empty-state">Error loading documents.</div>`;
+    }
+
+  } else if (currentResourcesSection === 'roadmaps') {
+    content.innerHTML = `<div class="empty-state">Loading roadmaps...</div>`;
+    const parentId = currentResourcesFolder ? currentResourcesFolder.id : 'null';
+
+    try {
+      const folders = await api.getFolders('roadmaps', parentId);
+      let docs = [];
+      if (currentResourcesFolder) {
+        docs = await api.getDocuments('roadmap', currentResourcesFolder.id);
+      }
+
+      if (folders.length === 0 && docs.length === 0) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <i data-lucide="map" style="width: 30px; height: 30px; margin-bottom: 10px; color: var(--text-muted);"></i>
+            <p>No folders or roadmaps here yet.</p>
+            ${isStaffOrEducator ? '<p style="font-size: 14px; margin-top: 6px;">Click "Add Folder" or "Upload PDF" to get started.</p>' : ''}
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      let foldersHTML = '';
+      if (folders.length > 0) {
+        foldersHTML = `
+          <h4 style="color: var(--primary-dark); margin-bottom: 12px; font-weight: 700;">Folders</h4>
+          <div class="folders-grid" style="margin-bottom: 30px;">
+            ${folders.map(f => `
+              <div class="folder-item roadmap-folder-card" data-id="${f.id}" data-name="${f.name}">
+                ${getFolderIconSvg('#a21caf', '#701a75')}
+                <span class="folder-name">${escapeHTML(f.name)}</span>
+                ${isStaffOrEducator ? `
+                  <div class="folder-actions-overlay">
+                    <button class="folder-btn btn-rename-roadmap-folder" data-id="${f.id}" data-name="${f.name}" title="Rename"><i data-lucide="edit-2" style="width:12px;height:12px;"></i></button>
+                    <button class="folder-btn folder-btn-danger btn-delete-roadmap-folder" data-id="${f.id}" title="Delete"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>
+                  </div>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      let docsHTML = '';
+      if (docs.length > 0) {
+        docsHTML = `
+          <h4 style="color: var(--primary-dark); margin-bottom: 12px; font-weight: 700;">Roadmap Files</h4>
+          <div class="docs-list">
+            ${docs.map(doc => `
+              <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative; border-left: 4px solid #a21caf;">
+                <div class="doc-info">
+                  <div class="doc-icon-container" style="background-color: #fae8ff; color: #a21caf;">
+                    <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+                  </div>
+                  <div class="doc-meta">
+                    <h5>${escapeHTML(doc.title)}</h5>
+                    <div class="doc-meta-details">
+                      <span>Year: ${escapeHTML(doc.year)}</span>
+                      <span>•</span>
+                      <span>By: ${escapeHTML(doc.uploadedBy)}</span>
+                      <span>•</span>
+                      <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                ${doc.isUploadedByTeacher ? `
+                  <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                    <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                    <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+                  </button>
+                ` : ''}
+
+                <div class="doc-actions">
+                  <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
+                  <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm"><i data-lucide="download" style="width:14px;height:14px;"></i> Download</a>
+                  ${canManageDocument(doc) ? `
+                    <button class="btn btn-danger btn-sm btn-delete-roadmap-doc" data-id="${doc.id}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      content.innerHTML = `
+        <div style="padding: 10px 0;">
+          ${foldersHTML}
+          ${docsHTML}
+        </div>
+      `;
+
+      // Event listeners
+      document.querySelectorAll('.roadmap-folder-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.folder-actions-overlay')) return;
+          const folderId = card.getAttribute('data-id');
+          const folderName = card.getAttribute('data-name');
+          const folder = { id: folderId, name: folderName };
+          roadmapFolderStack.push(folder);
+          currentResourcesFolder = folder;
+          renderResourcesView();
+        });
+      });
+
+      if (isStaffOrEducator) {
+        document.querySelectorAll('.btn-rename-roadmap-folder').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openFolderModal('roadmaps', btn.getAttribute('data-id'), btn.getAttribute('data-name'));
+          });
+        });
+
+        document.querySelectorAll('.btn-delete-roadmap-folder').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            if (!confirm('Are you sure you want to delete this folder and all subfolders and documents inside?')) return;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 10px; height: 10px;"></i>';
+            lucide.createIcons();
+            try {
+              await api.deleteFolder(id);
+              await renderResourcesView();
+            } catch (err) {
+              alert(err.message || 'Failed to delete folder');
+              btn.disabled = false;
+              btn.innerHTML = originalHTML;
+              lucide.createIcons();
+            }
+          });
+        });
+
+        document.querySelectorAll('.btn-delete-roadmap-doc').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-id');
+            if (!confirm('Delete this roadmap?')) return;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
+            lucide.createIcons();
+            try {
+              await api.deleteDocument(id);
+              await renderResourcesView();
+            } catch (err) {
+              alert(err.message || 'Failed to delete roadmap');
+              btn.disabled = false;
+              btn.innerHTML = originalHTML;
+              lucide.createIcons();
+            }
+          });
+        });
+      }
+
+      // Like handlers for roadmaps
+      document.querySelectorAll('.btn-like-doc').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          handleLikeToggle(e, renderResourcesView);
+        });
+      });
+
+    } catch (err) {
+      content.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load roadmaps: ${escapeHTML(err.message)}</div>`;
     }
 
   } else if (currentResourcesSection === 'calculator') {
@@ -1581,7 +1916,19 @@ async function renderResourcesView() {
 }
 
 function handleResourcesBack() {
-  if (currentResourcesSection === 'lab_manuals_folder') {
+  if (currentResourcesSection === 'roadmaps') {
+    if (roadmapFolderStack.length > 0) {
+      roadmapFolderStack.pop();
+      if (roadmapFolderStack.length > 0) {
+        currentResourcesFolder = roadmapFolderStack[roadmapFolderStack.length - 1];
+      } else {
+        currentResourcesFolder = null;
+      }
+    } else {
+      currentResourcesSection = 'root';
+      currentResourcesFolder = null;
+    }
+  } else if (currentResourcesSection === 'lab_manuals_folder') {
     currentResourcesSection = 'lab_manuals';
     currentResourcesFolder = null;
   } else if (currentResourcesSection === 'books_folder') {
@@ -3431,6 +3778,11 @@ async function initApp() {
     if (savedResourcesFolder && savedResourcesFolder !== 'null') currentResourcesFolder = JSON.parse(savedResourcesFolder);
   } catch (e) { console.error('Error restoring currentResourcesFolder:', e); }
 
+  try {
+    const savedRoadmapStack = localStorage.getItem('roadmapFolderStack');
+    if (savedRoadmapStack) roadmapFolderStack = JSON.parse(savedRoadmapStack);
+  } catch (e) { console.error('Error restoring roadmapFolderStack:', e); }
+
   const savedResourcesSection = localStorage.getItem('currentResourcesSection');
   if (savedResourcesSection) currentResourcesSection = savedResourcesSection;
 
@@ -3467,3 +3819,86 @@ async function initApp() {
 
 // Launch app
 window.addEventListener('DOMContentLoaded', initApp);
+
+async function handleLikeToggle(e, viewRefreshCallback) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const docId = btn.getAttribute('data-id');
+  if (!docId) return;
+
+  btn.disabled = true;
+  try {
+    await api.toggleLikeDocument(docId);
+    await viewRefreshCallback();
+  } catch (err) {
+    alert(err.message || 'Failed to toggle like');
+    btn.disabled = false;
+  }
+}
+
+async function renderTeacherDashboardView() {
+  const statsOwnUploads = document.getElementById('stats-own-uploads');
+  const statsOwnLikes = document.getElementById('stats-own-likes');
+  const statsTotalTeacherUploads = document.getElementById('stats-total-teacher-uploads');
+  const rankingListContainer = document.getElementById('dashboard-ranking-list');
+
+  if (!statsOwnUploads || !statsOwnLikes || !statsTotalTeacherUploads || !rankingListContainer) return;
+
+  statsOwnUploads.textContent = '...';
+  statsOwnLikes.textContent = '...';
+  statsTotalTeacherUploads.textContent = '...';
+  rankingListContainer.innerHTML = '<div class="empty-state">Loading rankings and stats...</div>';
+
+  try {
+    const stats = await api.getTeacherStats();
+    statsOwnUploads.textContent = stats.ownFilesCount;
+    statsOwnLikes.textContent = stats.ownLikesCount;
+    statsTotalTeacherUploads.textContent = stats.totalTeacherFiles;
+
+    const ranking = await api.getTeacherRanking();
+    if (ranking.length === 0) {
+      rankingListContainer.innerHTML = '<div class="empty-state">No educators registered yet.</div>';
+      return;
+    }
+
+    rankingListContainer.innerHTML = ranking.map((t, index) => {
+      const rankNum = index + 1;
+      let trophy = '';
+      if (rankNum === 1) trophy = '🏆';
+      else if (rankNum === 2) trophy = '🥈';
+      else if (rankNum === 3) trophy = '🥉';
+
+      const isSelf = currentUser && currentUser.id === t.id;
+      const highlightStyle = isSelf ? 'border-left: 4px solid var(--success); background-color: rgba(34, 197, 94, 0.05);' : '';
+
+      return `
+        <div class="card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; ${highlightStyle}">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="font-size: 18px; font-weight: 800; min-width: 70px; display: flex; align-items: center; gap: 4px;">
+              #${rankNum} ${trophy}
+            </div>
+            <div>
+              <h4 style="margin: 0; color: var(--primary-dark); font-size: 15px;">
+                ${escapeHTML(capitalizeName(t.name))}
+                ${isSelf ? '<span class="user-tag" style="background-color: var(--success-accent); color: var(--success); font-size: 10px; padding: 2px 6px;">You</span>' : ''}
+              </h4>
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">
+                ${t.uploads} uploads • ${t.likes} likes
+              </p>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="user-tag" style="font-weight: 700; font-size: 13px; background-color: var(--primary-accent); color: var(--primary-dark); padding: 4px 10px;">
+              ${t.points} pts
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    lucide.createIcons();
+  } catch (err) {
+    console.error('Error loading teacher stats/ranking:', err);
+    rankingListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load stats/ranking: ${escapeHTML(err.message)}</div>`;
+  }
+}
