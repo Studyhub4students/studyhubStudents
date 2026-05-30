@@ -2345,6 +2345,11 @@ async function renderAdminDashboardView() {
               </div>
             </div>
             <div style="display: flex; align-items: center;">
+              ${u.role === 'educator' && typeof u.points === 'number' ? `
+                <span class="user-tag" style="margin: 0 8px 0 0; padding: 4px 10px; font-size: 11px; font-weight: 700; background-color: var(--primary-accent); color: var(--primary-dark);">
+                  ${u.points} pts
+                </span>
+              ` : ''}
               ${u.id !== currentUser.id ? `
                 <button class="btn btn-secondary btn-sm btn-message-user" data-id="${u.id}" data-name="${escapeHTML(capitalizeName(u.name))}" style="margin-right: 8px; font-size: 11px; padding: 4px 10px; display: flex; align-items: center; gap: 3px; background-color: var(--primary-accent); color: var(--primary-dark); border-color: var(--primary-accent);" title="Send Notification Message">
                   <i data-lucide="bell" style="width: 12px; height: 12px;"></i> Message
