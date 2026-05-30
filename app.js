@@ -3683,8 +3683,8 @@ function showNotificationModal(notif) {
       }
     };
     
-    closeBtn.onclick = handleClose;
-    ackBtn.onclick = handleClose;
+    if (closeBtn) closeBtn.onclick = handleClose;
+    if (ackBtn) ackBtn.onclick = handleClose;
   }
 }
 
