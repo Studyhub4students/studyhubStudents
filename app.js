@@ -928,13 +928,11 @@ async function renderNotesView() {
         <h3 style="color: var(--primary-dark); margin-bottom: 16px;">Notes for ${escapeHTML(currentNotesFolder.name)}</h3>
         <div class="docs-list">
           ${docs.map(doc => `
-            <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative;">
-              ${doc.isUploadedByTeacher ? `
-                <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
-                  <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
-                  <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
-                </button>
-              ` : ''}
+            <div class="doc-card" style="position: relative;">
+              <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+              </button>
               <div class="doc-info">
                 <div class="doc-icon-container">
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -1198,13 +1196,11 @@ async function renderPapersView() {
           listHTML = `
             <div class="docs-list">
               ${filtered.map(doc => `
-                <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative; border-left: 4px solid #0284c7;">
-                  ${doc.isUploadedByTeacher ? `
-                    <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
-                      <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
-                      <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
-                    </button>
-                  ` : ''}
+                <div class="doc-card" style="position: relative; border-left: 4px solid #0284c7;">
+                  <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                    <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                    <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+                  </button>
                   <div class="doc-info">
                     <div class="doc-icon-container" style="background-color: #e0f2fe; color: #0284c7;">
                       <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -1509,13 +1505,11 @@ async function renderResourcesView() {
         <h3 style="color: var(--primary-dark); margin-bottom: 16px;">Syllabus Documents</h3>
         <div class="docs-list">
           ${docs.map(doc => `
-            <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative;">
-              ${doc.isUploadedByTeacher ? `
-                <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
-                  <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
-                  <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
-                </button>
-              ` : ''}
+            <div class="doc-card" style="position: relative;">
+              <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+              </button>
               <div class="doc-info">
                 <div class="doc-icon-container">
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -1674,13 +1668,11 @@ async function renderResourcesView() {
         </h3>
         <div class="docs-list">
           ${docs.map(doc => `
-            <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative;">
-              ${doc.isUploadedByTeacher ? `
-                <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
-                  <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
-                  <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
-                </button>
-              ` : ''}
+            <div class="doc-card" style="position: relative;">
+              <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+              </button>
               <div class="doc-info">
                 <div class="doc-icon-container">
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -1786,7 +1778,7 @@ async function renderResourcesView() {
           <h4 style="color: var(--primary-dark); margin-bottom: 12px; font-weight: 700;">Roadmap Files</h4>
           <div class="docs-list">
             ${docs.map(doc => `
-              <div class="doc-card ${doc.isUploadedByTeacher ? 'uploaded-by-teacher' : ''}" style="position: relative; border-left: 4px solid #a21caf;">
+              <div class="doc-card" style="position: relative; border-left: 4px solid #a21caf;">
                 <div class="doc-info">
                   <div class="doc-icon-container" style="background-color: #fae8ff; color: #a21caf;">
                     <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
@@ -1803,12 +1795,10 @@ async function renderResourcesView() {
                   </div>
                 </div>
 
-                ${doc.isUploadedByTeacher ? `
-                  <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
-                    <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
-                    <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
-                  </button>
-                ` : ''}
+                <button class="btn-like-doc like-heart-btn ${doc.hasLiked ? 'liked' : ''}" data-id="${doc.id}" title="${doc.hasLiked ? 'Unlike' : 'Like'} this resource" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: ${doc.hasLiked ? 'var(--danger)' : 'var(--text-muted)'}; transition: transform 0.2s ease;">
+                  <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${doc.hasLiked ? 'var(--danger)' : 'none'}; stroke: ${doc.hasLiked ? 'var(--danger)' : 'currentColor'};"></i>
+                  <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
+                </button>
 
                 <div class="doc-actions">
                   <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
