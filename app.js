@@ -40,168 +40,6 @@ async function request(endpoint, options = {}) {
   return data;
 }
 
-// Convert any non-PDF file to PDF using jsPDF
-async function convertToPdf(file) {
-  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-    return file;
-  }
-
-  const { jsPDF } = window.jspdf || {};
-  if (!jsPDF) {
-    throw new Error('PDF conversion library is not loaded. Please try again.');
-  }
-
-  // 1. Convert Word Documents (.docx) using Mammoth.js
-  if (file.name.toLowerCase().endsWith('.docx')) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const arrayBuffer = e.target.result;
-        if (!window.mammoth) {
-          reject(new Error("Word document parser library (Mammoth) is not loaded."));
-          return;
-        }
-        window.mammoth.extractRawText({ arrayBuffer: arrayBuffer })
-          .then(function(result) {
-            const text = result.value || '';
-            const pdf = new jsPDF();
-            
-            const margin = 15;
-            const pageHeight = pdf.internal.pageSize.height;
-            const pageWidth = pdf.internal.pageSize.width;
-            const maxLineWidth = pageWidth - (margin * 2);
-            
-            pdf.setFont("helvetica", "normal");
-            pdf.setFontSize(11);
-            
-            // Split text with line wrapping
-            const lines = pdf.splitTextToSize(text, maxLineWidth);
-            let cursorY = margin;
-            
-            for (let i = 0; i < lines.length; i++) {
-              if (cursorY + 8 > pageHeight - margin) {
-                pdf.addPage();
-                cursorY = margin;
-              }
-              pdf.text(lines[i], margin, cursorY);
-              cursorY += 6;
-            }
-            
-            const pdfBlob = pdf.output('blob');
-            const pdfFile = new File([pdfBlob], file.name.replace(/\.[^/.]+$/, "") + ".pdf", { type: 'application/pdf' });
-            resolve(pdfFile);
-          })
-          .catch(function(err) {
-            reject(new Error("Failed to parse Word document: " + err.message));
-          });
-      };
-      reader.onerror = () => reject(new Error("Failed to read Word file"));
-      reader.readAsArrayBuffer(file);
-    });
-  }
-
-  // 2. Convert Images
-  if (file.type.startsWith('image/')) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const imgWidth = img.width;
-          const imgHeight = img.height;
-          
-          // Width matches standard A4 (210 mm)
-          const pdfWidth = 210;
-          const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
-          
-          const pdf = new jsPDF({
-            orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
-            unit: 'mm',
-            format: [pdfWidth, pdfHeight]
-          });
-          
-          let format = 'JPEG';
-          if (file.type.includes('png')) format = 'PNG';
-          else if (file.type.includes('webp')) format = 'WEBP';
-          
-          pdf.addImage(e.target.result, format, 0, 0, pdfWidth, pdfHeight);
-          const pdfBlob = pdf.output('blob');
-          const pdfFile = new File([pdfBlob], file.name.replace(/\.[^/.]+$/, "") + ".pdf", { type: 'application/pdf' });
-          resolve(pdfFile);
-        };
-        img.onerror = () => {
-          reject(new Error("Failed to load image for PDF conversion"));
-        };
-        img.src = e.target.result;
-      };
-      reader.onerror = () => reject(new Error("Failed to read image file"));
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // 3. Convert Text / Code Files
-  const textExtensions = ['.txt', '.js', '.py', '.c', '.cpp', '.h', '.java', '.json', '.css', '.html', '.md', '.xml', '.svg'];
-  const hasTextExtension = textExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
-  if (file.type.startsWith('text/') || hasTextExtension) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const text = e.target.result;
-        const pdf = new jsPDF();
-        
-        const margin = 15;
-        const pageHeight = pdf.internal.pageSize.height;
-        const pageWidth = pdf.internal.pageSize.width;
-        const maxLineWidth = pageWidth - (margin * 2);
-        
-        pdf.setFont("courier", "normal");
-        pdf.setFontSize(10);
-        
-        const lines = pdf.splitTextToSize(text, maxLineWidth);
-        let cursorY = margin;
-        
-        for (let i = 0; i < lines.length; i++) {
-          if (cursorY + 7 > pageHeight - margin) {
-            pdf.addPage();
-            cursorY = margin;
-          }
-          pdf.text(lines[i], margin, cursorY);
-          cursorY += 5;
-        }
-        
-        const pdfBlob = pdf.output('blob');
-        const pdfFile = new File([pdfBlob], file.name.replace(/\.[^/.]+$/, "") + ".pdf", { type: 'application/pdf' });
-        resolve(pdfFile);
-      };
-      reader.onerror = () => reject(new Error("Failed to read text file"));
-      reader.readAsText(file);
-    });
-  }
-
-  // 4. Fallback Document Wrapper (Excel, PPT, Zip, etc.)
-  return new Promise((resolve) => {
-    const pdf = new jsPDF();
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(18);
-    pdf.text("Uploaded Document Metadata Envelope", 20, 30);
-    
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(12);
-    pdf.text(`Original Filename: ${file.name}`, 20, 50);
-    pdf.text(`Original File Size: ${(file.size / 1024).toFixed(2)} KB`, 20, 60);
-    pdf.text(`Original Content Type: ${file.type || 'unknown'}`, 20, 70);
-    pdf.text(`Auto-Converted On: ${new Date().toLocaleString()}`, 20, 80);
-    
-    pdf.setFont("helvetica", "italic");
-    pdf.setFontSize(10);
-    pdf.text("Note: This document was auto-wrapped into a PDF envelope during upload.", 20, 100);
-    
-    const pdfBlob = pdf.output('blob');
-    const pdfFile = new File([pdfBlob], file.name.replace(/\.[^/.]+$/, "") + ".pdf", { type: 'application/pdf' });
-    resolve(pdfFile);
-  });
-}
-
 const api = {
   // Auth API
   async login(phone, password) {
@@ -4146,9 +3984,9 @@ function initEventHandlers() {
 
     try {
       if (uploadSourceMode === 'file') {
-        let file = fileInput.files[0];
+        const file = fileInput.files[0];
         if (!file) {
-          errorAlert.textContent = 'Please select a file to upload';
+          errorAlert.textContent = 'Please select a PDF file to upload';
           errorAlert.style.display = 'block';
           uploadBtnSubmit.disabled = false;
           uploadBtnSubmit.textContent = 'Upload';
@@ -4156,29 +3994,23 @@ function initEventHandlers() {
         }
 
         if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-          uploadBtnSubmit.textContent = 'Converting to PDF...';
-          try {
-            file = await convertToPdf(file);
-          } catch (convErr) {
-            errorAlert.textContent = 'Conversion to PDF failed: ' + convErr.message;
-            errorAlert.style.display = 'block';
-            uploadBtnSubmit.disabled = false;
-            uploadBtnSubmit.textContent = 'Upload';
-            return;
-          }
-        }
-
-        // Check file size (10 MB = 10485760 bytes)
-        const MAX_FILE_SIZE = 10485760;
-        if (file.size > MAX_FILE_SIZE) {
-          errorAlert.textContent = `File size too large. Got ${(file.size / (1024 * 1024)).toFixed(2)} MB. Maximum is 10 MB.`;
+          errorAlert.textContent = 'Only PDF documents are allowed';
           errorAlert.style.display = 'block';
           uploadBtnSubmit.disabled = false;
           uploadBtnSubmit.textContent = 'Upload';
           return;
         }
 
-        uploadBtnSubmit.textContent = 'Uploading...';
+        // Check file size (10 MB = 10485760 bytes)
+        const MAX_FILE_SIZE = 10485760;
+        if (file.size > MAX_FILE_SIZE) {
+          errorAlert.textContent = `File size too large. Got ${file.size}. Maximum is ${MAX_FILE_SIZE}.`;
+          errorAlert.style.display = 'block';
+          uploadBtnSubmit.disabled = false;
+          uploadBtnSubmit.textContent = 'Upload';
+          return;
+        }
+
         const formData = new FormData();
         formData.append('pdf', file);
         formData.append('title', title);
@@ -5042,19 +4874,17 @@ function initContributionEventHandlers() {
 
       try {
         if (contributeSourceMode === 'file') {
-          let file = fileInput.files[0];
+          const file = fileInput.files[0];
           if (!file) {
-            throw new Error('Please select a file to upload');
+            throw new Error('Please select a PDF file to upload');
           }
           if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-            if (submitBtn) submitBtn.textContent = 'Converting to PDF...';
-            file = await convertToPdf(file);
+            throw new Error('Only PDF files are allowed');
           }
           if (file.size > 10485760) {
             throw new Error('File size exceeds the 10 MB limit.');
           }
 
-          if (submitBtn) submitBtn.textContent = 'Uploading...';
           const formData = new FormData();
           formData.append('pdf', file);
           formData.append('title', title);
