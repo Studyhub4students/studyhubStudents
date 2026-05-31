@@ -154,6 +154,29 @@ const api = {
     });
   },
 
+  async contributeDocument(formData) {
+    return await request('/documents/contribute', {
+      method: 'POST',
+      body: formData
+    });
+  },
+
+  async getPendingDocuments() {
+    return await request('/documents/pending');
+  },
+
+  async approveDocument(docId) {
+    return await request(`/documents/approve/${docId}`, {
+      method: 'POST'
+    });
+  },
+
+  async rejectDocument(docId) {
+    return await request(`/documents/reject/${docId}`, {
+      method: 'POST'
+    });
+  },
+
   async deleteDocument(docId) {
     return await request(`/documents/${docId}`, {
       method: 'DELETE'
@@ -360,6 +383,13 @@ function updateNavbar() {
   const container = document.getElementById('nav-auth-container');
   const adminTab = document.getElementById('nav-admin');
   const mobMenu = document.getElementById('mobile-nav-menu');
+  const floatingContributeBtn = document.getElementById('btn-floating-contribute');
+
+  if (currentUser && currentUser.role === 'student') {
+    if (floatingContributeBtn) floatingContributeBtn.style.display = 'flex';
+  } else {
+    if (floatingContributeBtn) floatingContributeBtn.style.display = 'none';
+  }
 
   if (currentUser) {
     // Show admin dashboard tab for admin & superadmin
@@ -376,6 +406,16 @@ function updateNavbar() {
         myUploadsTab.style.display = 'flex';
       } else {
         myUploadsTab.style.display = 'none';
+      }
+    }
+
+    // Show My Contributions tab for students only
+    const myContributionsTab = document.getElementById('nav-my-contributions');
+    if (myContributionsTab) {
+      if (currentUser.role === 'student') {
+        myContributionsTab.style.display = 'flex';
+      } else {
+        myContributionsTab.style.display = 'none';
       }
     }
 
@@ -461,6 +501,9 @@ function updateNavbar() {
         <a href="#/papers" class="mobile-nav-link" id="mob-nav-papers"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> Papers</a>
         <a href="#/resources" class="mobile-nav-link" id="mob-nav-resources"><i data-lucide="compass" style="width: 18px; height: 18px;"></i> Resources</a>
         <a href="#/support" class="mobile-nav-link" id="mob-nav-support"><i data-lucide="help-circle" style="width: 18px; height: 18px;"></i> Help & Support</a>
+        ${currentUser.role === 'student' ? `
+          <a href="#/my-contributions" class="mobile-nav-link" id="mob-nav-my-contributions"><i data-lucide="award" style="width: 18px; height: 18px;"></i> My Contributions</a>
+        ` : ''}
         ${(currentUser.role === 'educator' || currentUser.role === 'admin' || currentUser.role === 'superadmin') ? `
           <a href="#/my-uploads" class="mobile-nav-link" id="mob-nav-my-uploads"><i data-lucide="folder-heart" style="width: 18px; height: 18px;"></i> My Uploads</a>
         ` : ''}
@@ -499,9 +542,12 @@ function updateNavbar() {
     });
 
   } else {
+    if (floatingContributeBtn) floatingContributeBtn.style.display = 'none';
     adminTab.style.display = 'none';
     const myUploadsTab = document.getElementById('nav-my-uploads');
     if (myUploadsTab) myUploadsTab.style.display = 'none';
+    const myContributionsTab = document.getElementById('nav-my-contributions');
+    if (myContributionsTab) myContributionsTab.style.display = 'none';
     
     // Populate Desktop Auth State (Logged out)
     container.innerHTML = `
@@ -560,6 +606,10 @@ function handleAuthProtection(hash) {
     return false;
   }
   if (hash === '#/my-uploads' && currentUser && currentUser.role !== 'educator' && currentUser.role !== 'admin' && currentUser.role !== 'superadmin') {
+    navigate('#/');
+    return false;
+  }
+  if (hash === '#/my-contributions' && currentUser && currentUser.role !== 'student') {
     navigate('#/');
     return false;
   }
@@ -651,6 +701,9 @@ async function router() {
   } else if (hash === '#/my-uploads') {
     document.getElementById('view-my-uploads').style.display = 'block';
     await renderMyUploadsView();
+  } else if (hash === '#/my-contributions') {
+    document.getElementById('view-my-contributions').style.display = 'block';
+    await renderMyContributionsView();
   } else if (hash === '#/support') {
     document.getElementById('view-support').style.display = 'block';
     await renderSupportView();
@@ -954,7 +1007,7 @@ async function renderNotesView() {
                   <div class="doc-meta-details">
                     <span>Academic Year: ${escapeHTML(doc.year)}</span>
                     <span>•</span>
-                    <span>By: ${escapeHTML(doc.uploadedBy)}</span>
+                    <span>Contributed By: ${escapeHTML(doc.uploadedBy)}</span>
                     <span>•</span>
                     <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                   </div>
@@ -1222,7 +1275,7 @@ async function renderPapersView() {
                       <div class="doc-meta-details">
                         <span>Academic Year: ${escapeHTML(doc.year)}</span>
                         <span>•</span>
-                        <span>By: ${escapeHTML(doc.uploadedBy)}</span>
+                        <span>Contributed By: ${escapeHTML(doc.uploadedBy)}</span>
                         <span>•</span>
                         <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                       </div>
@@ -1531,7 +1584,7 @@ async function renderResourcesView() {
                   <div class="doc-meta-details">
                     <span>Year: ${escapeHTML(doc.year)}</span>
                     <span>•</span>
-                    <span>By: ${escapeHTML(doc.uploadedBy)}</span>
+                    <span>Contributed By: ${escapeHTML(doc.uploadedBy)}</span>
                   </div>
                 </div>
               </div>
@@ -1694,7 +1747,7 @@ async function renderResourcesView() {
                   <div class="doc-meta-details">
                     <span>Year: ${escapeHTML(doc.year)}</span>
                     <span>•</span>
-                    <span>By: ${escapeHTML(doc.uploadedBy)}</span>
+                    <span>Contributed By: ${escapeHTML(doc.uploadedBy)}</span>
                   </div>
                 </div>
               </div>
@@ -1800,7 +1853,7 @@ async function renderResourcesView() {
                     <div class="doc-meta-details">
                       <span>Year: ${escapeHTML(doc.year)}</span>
                       <span>•</span>
-                      <span>By: ${escapeHTML(doc.uploadedBy)}</span>
+                      <span>Contributed By: ${escapeHTML(doc.uploadedBy)}</span>
                       <span>•</span>
                       <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                     </div>
@@ -2721,6 +2774,8 @@ async function renderAdminDashboardView() {
       if (messagesShowMoreContainer) messagesShowMoreContainer.innerHTML = '';
     }
 
+    await renderPendingContributions();
+
     lucide.createIcons();
 
   } catch (err) {
@@ -3200,6 +3255,21 @@ async function renderMyUploadsView() {
 
   try {
     myUploadsDocsList = await api.getMyUploads();
+
+    const uploadsCountEl = document.getElementById('stats-uploads-count');
+    const uploadsLikesEl = document.getElementById('stats-uploads-likes');
+    
+    if (uploadsCountEl) {
+      uploadsCountEl.textContent = myUploadsDocsList.length;
+    }
+    if (uploadsLikesEl) {
+      let totalLikes = 0;
+      myUploadsDocsList.forEach(doc => {
+        totalLikes += doc.likesCount || 0;
+      });
+      uploadsLikesEl.textContent = totalLikes;
+    }
+
     renderFilteredMyUploads();
   } catch (err) {
     console.error('Error loading my uploads:', err);
@@ -4466,6 +4536,7 @@ async function initApp() {
   
   updateNavbar();
   initEventHandlers();
+  initContributionEventHandlers();
   initEditorEventHandlers();
   
   // Run routing trigger
@@ -4557,3 +4628,435 @@ async function renderTeacherDashboardView() {
     rankingListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load stats/ranking: ${escapeHTML(err.message)}</div>`;
   }
 }
+
+async function renderPendingContributions() {
+  const pendingDocsCount = document.getElementById('pending-docs-count');
+  const pendingDocsContainer = document.getElementById('pending-docs-list-container');
+  if (!pendingDocsContainer) return;
+
+  pendingDocsContainer.innerHTML = '<div class="empty-state">Loading pending contributions...</div>';
+
+  try {
+    const pendingDocs = await api.getPendingDocuments();
+    if (pendingDocsCount) pendingDocsCount.textContent = pendingDocs.length;
+
+    if (pendingDocs.length === 0) {
+      pendingDocsContainer.innerHTML = '<div class="empty-state" style="padding: 30px;">No pending contributions to verify.</div>';
+    } else {
+      pendingDocsContainer.innerHTML = pendingDocs.map(d => {
+        const displayType = d.type === 'notes' ? 'Notes' : (d.type === 'paper' ? 'PYQ/Paper' : 'Lab Manual');
+        return `
+          <div class="doc-card pending-doc-card" style="margin-bottom: 12px;">
+            <div class="doc-info">
+              <div class="doc-icon-container">
+                <i data-lucide="file-text"></i>
+              </div>
+              <div class="doc-meta">
+                <h5 style="font-size: 16px; margin-bottom: 4px; color: var(--primary-dark); font-weight: 700;">${escapeHTML(d.title)}</h5>
+                <p style="font-size: 13px; color: var(--text-main); margin-bottom: 4px;">
+                  Category: <strong>${escapeHTML(displayType)}</strong> • Subject: <strong>${escapeHTML(d.subject || 'N/A')}</strong>
+                </p>
+                <p style="font-size: 12px; color: var(--text-muted);">
+                  Contributor: <strong>${escapeHTML(d.contributorName)}</strong> (${escapeHTML(d.contributorPhone)}) • Year: ${escapeHTML(d.year || 'N/A')}
+                </p>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                  Submitted: ${new Date(d.createdAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div class="pending-doc-actions">
+              <a href="${escapeHTML(d.fileUrl)}" target="_blank" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="eye" style="width: 14px; height: 14px;"></i> View File
+              </a>
+              <button class="btn btn-primary btn-sm btn-approve-doc" data-id="${d.id}" style="background-color: var(--success); border: none; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="check" style="width: 14px; height: 14px;"></i> Accept
+              </button>
+              <button class="btn btn-danger btn-sm btn-reject-doc" data-id="${d.id}" style="display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Delete
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Bind approve handlers
+      pendingDocsContainer.querySelectorAll('.btn-approve-doc').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const docId = btn.getAttribute('data-id');
+          const originalHTML = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
+          lucide.createIcons();
+          try {
+            await api.approveDocument(docId);
+            await renderAdminDashboardView();
+          } catch (err) {
+            alert(err.message || 'Failed to approve resource');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            lucide.createIcons();
+          }
+        });
+      });
+
+      // Bind reject handlers
+      pendingDocsContainer.querySelectorAll('.btn-reject-doc').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const docId = btn.getAttribute('data-id');
+          if (!confirm('Are you sure you want to reject and delete this contribution?')) return;
+          const originalHTML = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
+          lucide.createIcons();
+          try {
+            await api.rejectDocument(docId);
+            await renderAdminDashboardView();
+          } catch (err) {
+            alert(err.message || 'Failed to reject resource');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            lucide.createIcons();
+          }
+        });
+      });
+    }
+  } catch (err) {
+    console.error('Error rendering pending contributions:', err);
+    pendingDocsContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load contributions: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
+function initContributionEventHandlers() {
+  const floatingBtn = document.getElementById('btn-floating-contribute');
+  const contributeModal = document.getElementById('modal-contribute');
+  const closeBtn = document.getElementById('modal-contribute-close');
+  const cancelBtn = document.getElementById('modal-contribute-cancel');
+  const contributeForm = document.getElementById('form-contribute');
+  const categorySelect = document.getElementById('contribute-category');
+  const subjectSelect = document.getElementById('contribute-subject');
+  const yearSelect = document.getElementById('contribute-doc-year');
+  const tabFile = document.getElementById('tab-contribute-file');
+  const tabLink = document.getElementById('tab-contribute-link');
+  const groupFile = document.getElementById('group-contribute-file');
+  const groupLink = document.getElementById('group-contribute-link');
+  const linkInput = document.getElementById('contribute-link-input');
+  const fileInput = document.getElementById('contribute-file-input');
+  const dragBox = document.getElementById('contribute-drag-box');
+  const fileLabel = document.getElementById('contribute-file-label');
+  const errorAlert = document.getElementById('contribute-error-alert');
+  const successAlert = document.getElementById('contribute-success-alert');
+  const submitBtn = document.getElementById('btn-contribute-submit');
+
+  const closeContribute = () => {
+    if (contributeModal) contributeModal.style.display = 'none';
+  };
+
+  if (floatingBtn) {
+    floatingBtn.addEventListener('click', () => {
+      if (contributeModal) contributeModal.style.display = 'flex';
+      if (errorAlert) errorAlert.style.display = 'none';
+      if (successAlert) successAlert.style.display = 'none';
+      if (contributeForm) contributeForm.reset();
+      
+      // Populate contributor name
+      const contributorNameInput = document.getElementById('contribute-user-name');
+      if (contributorNameInput && currentUser) {
+        contributorNameInput.value = currentUser.name;
+      }
+
+      // Populate academic years
+      if (yearSelect) {
+        const years = getAcademicYears();
+        yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      }
+
+      // Reset tab states
+      contributeSourceMode = 'file';
+      if (tabFile) tabFile.classList.add('active');
+      if (tabLink) tabLink.classList.remove('active');
+      if (groupFile) groupFile.style.display = 'block';
+      if (groupLink) groupLink.style.display = 'none';
+      if (fileLabel) fileLabel.textContent = 'Click to browse files';
+      if (subjectSelect) {
+        subjectSelect.disabled = true;
+        subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject Folder</option>';
+      }
+      lucide.createIcons();
+    });
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', closeContribute);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeContribute);
+
+  if (categorySelect && subjectSelect) {
+    categorySelect.addEventListener('change', async () => {
+      const category = categorySelect.value;
+      subjectSelect.disabled = true;
+      subjectSelect.innerHTML = '<option value="" disabled selected>Loading subjects...</option>';
+      try {
+        const folders = await api.getFolders(category);
+        if (folders.length === 0) {
+          subjectSelect.innerHTML = '<option value="" disabled selected>No subjects available</option>';
+        } else {
+          subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject Folder</option>' +
+            folders.map(f => `<option value="${f.id}">${escapeHTML(f.name)}</option>`).join('');
+          subjectSelect.disabled = false;
+        }
+      } catch (err) {
+        subjectSelect.innerHTML = '<option value="" disabled selected>Error loading subjects</option>';
+        console.error('Failed to load folders for category:', err);
+      }
+    });
+  }
+
+  let contributeSourceMode = 'file';
+  if (tabFile && tabLink) {
+    tabFile.addEventListener('click', () => {
+      contributeSourceMode = 'file';
+      tabFile.classList.add('active');
+      tabLink.classList.remove('active');
+      if (groupFile) groupFile.style.display = 'block';
+      if (groupLink) groupLink.style.display = 'none';
+      if (errorAlert) errorAlert.style.display = 'none';
+    });
+    tabLink.addEventListener('click', () => {
+      contributeSourceMode = 'link';
+      tabFile.classList.remove('active');
+      tabLink.classList.add('active');
+      if (groupFile) groupFile.style.display = 'none';
+      if (groupLink) groupLink.style.display = 'block';
+      if (errorAlert) errorAlert.style.display = 'none';
+    });
+  }
+
+  if (dragBox && fileInput) {
+    dragBox.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        fileLabel.textContent = file.name;
+      } else {
+        fileLabel.textContent = 'Click to browse files';
+      }
+    });
+  }
+
+  if (contributeForm) {
+    contributeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (errorAlert) errorAlert.style.display = 'none';
+      if (successAlert) successAlert.style.display = 'none';
+
+      const title = document.getElementById('contribute-doc-title').value.trim();
+      const category = categorySelect.value;
+      const folderId = subjectSelect.value;
+      const year = yearSelect.value;
+      
+      if (!title || !category || !folderId) {
+        if (errorAlert) {
+          errorAlert.textContent = 'All fields (Title, Category, Subject) are required.';
+          errorAlert.style.display = 'block';
+        }
+        return;
+      }
+
+      let docType = 'notes';
+      if (category === 'papers') docType = 'paper';
+      else if (category === 'lab_manuals') docType = 'lab_manual';
+
+      const folderOption = subjectSelect.options[subjectSelect.selectedIndex];
+      const subject = folderOption ? folderOption.text : '';
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Uploading...';
+      }
+
+      try {
+        if (contributeSourceMode === 'file') {
+          const file = fileInput.files[0];
+          if (!file) {
+            throw new Error('Please select a PDF file to upload');
+          }
+          if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+            throw new Error('Only PDF files are allowed');
+          }
+          if (file.size > 10485760) {
+            throw new Error('File size exceeds the 10 MB limit.');
+          }
+
+          const formData = new FormData();
+          formData.append('pdf', file);
+          formData.append('title', title);
+          formData.append('type', docType);
+          formData.append('folderId', folderId);
+          formData.append('subject', subject);
+          formData.append('year', year);
+
+          await api.contributeDocument(formData);
+        } else {
+          const link = linkInput.value.trim();
+          if (!link) {
+            throw new Error('Please enter a document URL');
+          }
+          if (!link.startsWith('http://') && !link.startsWith('https://')) {
+            throw new Error('Please enter a valid URL starting with http:// or https://');
+          }
+
+          const formData = new FormData();
+          formData.append('title', title);
+          formData.append('type', docType);
+          formData.append('folderId', folderId);
+          formData.append('subject', subject);
+          formData.append('year', year);
+          formData.append('fileUrl', link);
+          formData.append('fileName', 'Link Resource');
+
+          await api.contributeDocument(formData);
+        }
+
+        if (successAlert) {
+          successAlert.textContent = 'Thank you! Your resource has been submitted and is pending admin approval.';
+          successAlert.style.display = 'block';
+        }
+        
+        contributeForm.reset();
+        if (fileLabel) fileLabel.textContent = 'Click to browse files';
+        if (subjectSelect) {
+          subjectSelect.disabled = true;
+          subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject Folder</option>';
+        }
+
+        setTimeout(() => {
+          closeContribute();
+        }, 2500);
+
+      } catch (err) {
+        if (errorAlert) {
+          errorAlert.textContent = err.message || 'Failed to submit contribution';
+          errorAlert.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload';
+        }
+      }
+    });
+  }
+}
+
+async function renderMyContributionsView() {
+  const container = document.getElementById('view-my-contributions');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="folder-page-header">
+      <div class="folder-breadcrumbs">
+        <span class="breadcrumb-active" style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="award" style="color: var(--primary); width: 22px; height: 22px;"></i> 
+          My Contribution Dashboard
+        </span>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <p style="color: var(--text-muted); font-size: 15px; margin: 0;">
+        Track your contributed files, approval status, and likes received from other students.
+      </p>
+    </div>
+
+    <!-- Analytics Stats Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 40px;">
+      <div class="card" style="padding: 24px; text-align: center; border-left: 4px solid var(--success);">
+        <div style="color: var(--text-muted); font-size: 13px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Accepted Contributions</div>
+        <div id="stats-contributions-accepted" style="font-size: 36px; font-weight: 800; color: var(--success);">0</div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Files approved by Admin</p>
+      </div>
+      <div class="card" style="padding: 24px; text-align: center; border-left: 4px solid var(--primary);">
+        <div style="color: var(--text-muted); font-size: 13px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Total Likes Received</div>
+        <div id="stats-contributions-likes" style="font-size: 36px; font-weight: 800; color: var(--primary-dark);">0</div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Likes on your approved resources</p>
+      </div>
+    </div>
+
+    <!-- Contributed Files list -->
+    <div style="border-top: 1px solid var(--border-color); padding-top: 30px;">
+      <h3 class="section-title" style="margin-bottom: 16px; font-size: 20px;">
+        <i data-lucide="file-text" style="color: var(--primary); width: 22px; height: 22px;"></i>
+        Your Contribution Submissions
+      </h3>
+      <div id="student-contributions-list" class="docs-list">
+        <div class="empty-state">Loading your contributions...</div>
+      </div>
+    </div>
+  `;
+
+  lucide.createIcons();
+
+  const acceptedEl = document.getElementById('stats-contributions-accepted');
+  const likesEl = document.getElementById('stats-contributions-likes');
+  const listEl = document.getElementById('student-contributions-list');
+
+  try {
+    const response = await request('/documents/my-contributions');
+    const contributions = response || [];
+
+    const acceptedFiles = contributions.filter(c => c.status === 'approved');
+    const totalAccepted = acceptedFiles.length;
+    let totalLikes = 0;
+    acceptedFiles.forEach(f => {
+      totalLikes += f.likesCount || 0;
+    });
+
+    if (acceptedEl) acceptedEl.textContent = totalAccepted;
+    if (likesEl) likesEl.textContent = totalLikes;
+
+    if (contributions.length === 0) {
+      if (listEl) listEl.innerHTML = '<div class="empty-state">You haven\'t contributed any resources yet. Use the "+" button to start contributing!</div>';
+    } else {
+      if (listEl) {
+        listEl.innerHTML = contributions.map(c => {
+          const displayType = c.type === 'notes' ? 'Notes' : (c.type === 'paper' ? 'PYQ/Paper' : 'Lab Manual');
+          
+          let statusBadge = '';
+          if (c.status === 'pending') {
+            statusBadge = `<span style="font-size: 11px; font-weight: 700; background-color: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 12px; border: 1px solid #fde68a;">Pending Approval</span>`;
+          } else {
+            statusBadge = `<span style="font-size: 11px; font-weight: 700; background-color: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 12px; border: 1px solid #86efac;">Approved & Live</span>`;
+          }
+
+          return `
+            <div class="doc-card" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <div class="doc-info">
+                <div class="doc-icon-container" style="background-color: ${c.status === 'pending' ? '#fffbeb' : '#f0fdf4'}; color: ${c.status === 'pending' ? '#d97706' : '#16a34a'};">
+                  <i data-lucide="file-text"></i>
+                </div>
+                <div class="doc-meta">
+                  <h5 style="font-size: 15px; font-weight: 700; color: var(--primary-dark); margin: 0 0 4px 0;">${escapeHTML(c.title)}</h5>
+                  <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 4px 0;">
+                    Category: <strong>${escapeHTML(displayType)}</strong> • Subject: <strong>${escapeHTML(c.subject || 'N/A')}</strong>
+                  </p>
+                  <p style="font-size: 11px; color: var(--text-muted); margin: 0;">
+                    Submitted: ${new Date(c.createdAt).toLocaleDateString()} • Likes: ${c.likesCount}
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                ${statusBadge}
+                ${c.status === 'approved' ? `
+                  <a href="${escapeHTML(c.fileUrl)}" target="_blank" class="btn btn-secondary btn-sm" style="padding: 6px 12px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+    lucide.createIcons();
+  } catch (err) {
+    console.error('Error fetching student contributions stats:', err);
+    if (listEl) listEl.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load contributions details: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
