@@ -1605,4 +1605,80 @@ body {
   }
 }
 
+/* Floating Contribute Button */
+.btn-floating-contribute {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: var(--white);
+  border: none;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: pulse-light 2s infinite;
+}
+
+.btn-floating-contribute:hover {
+  background-color: var(--primary-dark);
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+}
+
+.btn-floating-contribute i {
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes pulse-light {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-floating-contribute {
+    bottom: 20px;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Admin Pending Contributions */
+.pending-doc-card {
+  border-left: 4px solid var(--warning) !important;
+}
+
+.pending-doc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .doc-card.pending-doc-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .pending-doc-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+
 
