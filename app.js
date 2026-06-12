@@ -648,9 +648,27 @@ function navigate(hash) {
   window.location.hash = hash;
 }
 
+function getHashQueryParams() {
+  const hash = window.location.hash;
+  const qIndex = hash.indexOf('?');
+  if (qIndex === -1) return {};
+  
+  const qStr = hash.slice(qIndex + 1);
+  const params = {};
+  const pairs = qStr.split('&');
+  for (const pair of pairs) {
+    const [key, value] = pair.split('=');
+    if (key) {
+      params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+    }
+  }
+  return params;
+}
+
 // --- ROUTER ENGINE ---
 async function router() {
-  const hash = window.location.hash || '#/';
+  const fullHash = window.location.hash || '#/';
+  const hash = fullHash.split('?')[0];
   
   // Update navbar active state
   document.querySelectorAll('.nav-links .nav-link').forEach(link => {
@@ -3538,9 +3556,15 @@ async function renderSupportView() {
     roleInput.required = true;
   }
 
-  // Clear inputs
-  document.getElementById('support-subject').value = '';
-  document.getElementById('support-message').value = '';
+  // Prefill or clear inputs based on reason query parameter
+  const params = getHashQueryParams();
+  if (params.reason === 'forgot-password') {
+    document.getElementById('support-subject').value = 'Forgot Password Reset Request';
+    document.getElementById('support-message').value = 'Hello, I forgot my password. Please reset my password to the default 123456. Thank you!';
+  } else {
+    document.getElementById('support-subject').value = '';
+    document.getElementById('support-message').value = '';
+  }
   lucide.createIcons();
 }
 
