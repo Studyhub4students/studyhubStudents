@@ -114,6 +114,10 @@ const api = {
     });
   },
 
+  async adminResetPassword(userId) {
+    return await request(`/auth/users/${userId}/reset-password`, { method: 'POST' });
+  },
+
   // Folders API
   async getFolders(type, parentId = null) {
     let url = `/folders?type=${type}`;
@@ -190,6 +194,13 @@ const api = {
     });
   },
 
+  async moveDocument(docId, targetType, targetFolderId) {
+    return await request(`/documents/${docId}/move`, {
+      method: 'PUT',
+      body: { targetType, targetFolderId }
+    });
+  },
+
   async getMyUploads() {
     return await request('/documents/my-uploads');
   },
@@ -220,10 +231,10 @@ const api = {
   },
 
   // Help & Support API
-  async submitHelpRequest(subject, message) {
+  async submitHelpRequest(subject, message, name = null, phone = null, role = null) {
     return await request('/help', {
       method: 'POST',
-      body: { subject, message }
+      body: { subject, message, name, phone, role }
     });
   },
 
@@ -609,7 +620,7 @@ function updateNavbar() {
 }
 
 function handleAuthProtection(hash) {
-  const publicRoutes = ['#/login', '#/signup', '#/generators'];
+  const publicRoutes = ['#/login', '#/signup', '#/generators', '#/support'];
   if (!publicRoutes.includes(hash) && !currentUser) {
     navigate('#/login');
     return false;
@@ -1043,6 +1054,11 @@ async function renderNotesView() {
                 <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm" style="padding: 8px 12px;">
                   <i data-lucide="download" style="width: 14px; height: 14px;"></i> Download
                 </a>
+                ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                  <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document">
+                    <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                  </button>
+                ` : ''}
                 ${canManageDocument(doc) ? `
                   <button class="btn btn-danger btn-sm btn-delete-doc" data-id="${doc.id}" style="padding: 8px 12px;">
                     <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
@@ -1311,6 +1327,11 @@ async function renderPapersView() {
                     <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm" style="padding: 8px 12px;">
                       <i data-lucide="download" style="width: 14px; height: 14px;"></i> Download
                     </a>
+                    ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                      <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document">
+                        <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                      </button>
+                    ` : ''}
                     ${canManageDocument(doc) ? `
                       <button class="btn btn-danger btn-sm btn-delete-paper" data-id="${doc.id}" style="padding: 8px 12px;">
                         <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
@@ -1614,6 +1635,9 @@ async function renderResourcesView() {
               <div class="doc-actions">
                 <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
                 <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm"><i data-lucide="download" style="width:14px;height:14px;"></i> Download</a>
+                ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                  <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document"><i data-lucide="folder-sync" style="width:14px;height:14px;"></i></button>
+                ` : ''}
                 ${canManageDocument(doc) ? `
                   <button class="btn btn-danger btn-sm btn-delete-resource-doc" data-id="${doc.id}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                 ` : ''}
@@ -1777,6 +1801,9 @@ async function renderResourcesView() {
               <div class="doc-actions">
                 <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
                 <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm"><i data-lucide="download" style="width:14px;height:14px;"></i> Download</a>
+                ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                  <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document"><i data-lucide="folder-sync" style="width:14px;height:14px;"></i></button>
+                ` : ''}
                 ${canManageDocument(doc) ? `
                   <button class="btn btn-danger btn-sm btn-delete-res-item-doc" data-id="${doc.id}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                 ` : ''}
@@ -1891,6 +1918,9 @@ async function renderResourcesView() {
                 <div class="doc-actions">
                   <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
                   <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm"><i data-lucide="download" style="width:14px;height:14px;"></i> Download</a>
+                  ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                    <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document"><i data-lucide="folder-sync" style="width:14px;height:14px;"></i></button>
+                  ` : ''}
                   ${canManageDocument(doc) ? `
                     <button class="btn btn-danger btn-sm btn-delete-roadmap-doc" data-id="${doc.id}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                   ` : ''}
@@ -2432,6 +2462,9 @@ async function renderAdminDashboardView() {
                 <button class="btn btn-secondary btn-sm btn-message-user" data-id="${u.id}" data-name="${escapeHTML(capitalizeName(u.name))}" style="margin-right: 8px; font-size: 11px; padding: 4px 10px; display: flex; align-items: center; gap: 3px; background-color: var(--primary-accent); color: var(--primary-dark); border-color: var(--primary-accent);" title="Send Notification Message">
                   <i data-lucide="bell" style="width: 12px; height: 12px;"></i> Message
                 </button>
+                <button class="btn btn-secondary btn-sm btn-admin-reset-password" data-id="${u.id}" data-name="${escapeHTML(capitalizeName(u.name))}" style="margin-right: 8px; font-size: 11px; padding: 4px 10px; display: flex; align-items: center; gap: 3px; background-color: #fef08a; color: #854d0e; border-color: #fef08a;" title="Reset user password to 123456">
+                  <i data-lucide="key" style="width: 12px; height: 12px;"></i> Reset Password
+                </button>
               ` : ''}
               ${canPromote ? `
                 <button class="btn btn-secondary btn-sm btn-promote-admin" data-id="${u.id}" style="margin-right: 8px; font-size: 11px; padding: 4px 10px; display: flex; align-items: center; gap: 3px; background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd;" title="Promote to Super Admin">
@@ -2505,6 +2538,27 @@ async function renderAdminDashboardView() {
             nameInput.value = userName;
             modal.style.display = 'flex';
             renderMessageTemplates();
+          }
+        });
+      });
+      document.querySelectorAll('.btn-admin-reset-password').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const userName = btn.getAttribute('data-name');
+          const userId = btn.getAttribute('data-id');
+          if (!confirm(`Are you sure you want to reset the password for ${userName} to 123456?`)) return;
+          const originalHTML = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 12px; height: 12px;"></i>';
+          lucide.createIcons();
+          try {
+            const res = await api.adminResetPassword(userId);
+            alert(res.message || 'Successfully reset password to 123456!');
+          } catch (err) {
+            alert(err.message || 'Failed to reset password');
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            lucide.createIcons();
           }
         });
       });
@@ -2813,6 +2867,7 @@ function closeAllModals() {
   document.getElementById('modal-folder').style.display = 'none';
   document.getElementById('modal-upload').style.display = 'none';
   if (document.getElementById('modal-edit-document')) document.getElementById('modal-edit-document').style.display = 'none';
+  if (document.getElementById('modal-move-document')) document.getElementById('modal-move-document').style.display = 'none';
   if (document.getElementById('modal-send-message')) document.getElementById('modal-send-message').style.display = 'none';
   if (document.getElementById('modal-view-notification')) document.getElementById('modal-view-notification').style.display = 'none';
 
@@ -3364,6 +3419,11 @@ function renderFilteredMyUploads() {
                 style="padding: 8px 12px;">
                 <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i> Edit
               </button>
+              ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document">
+                  <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                </button>
+              ` : ''}
               <button class="btn btn-danger btn-sm btn-delete-uploaded-doc" data-id="${doc.id}" style="padding: 8px 12px;">
                 <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Delete
               </button>
@@ -3423,6 +3483,21 @@ function openEditDocumentModal(docId, title, subject, year) {
   document.getElementById('modal-edit-document').style.display = 'flex';
 }
 
+function openMoveDocumentModal(docId, docTitle) {
+  document.getElementById('move-doc-id').value = docId;
+  document.getElementById('move-doc-section').value = '';
+  document.getElementById('move-doc-folder-group').style.display = 'none';
+  document.getElementById('move-doc-folder').removeAttribute('required');
+  document.getElementById('move-doc-error-alert').style.display = 'none';
+  
+  const titleEl = document.querySelector('#modal-move-document .modal-title');
+  if (titleEl) {
+    titleEl.textContent = `Shift Document: ${docTitle}`;
+  }
+  
+  document.getElementById('modal-move-document').style.display = 'flex';
+}
+
 // HELP & SUPPORT VIEW
 async function renderSupportView() {
   const errorAlert = document.getElementById('support-error-alert');
@@ -3431,19 +3506,37 @@ async function renderSupportView() {
   errorAlert.style.display = 'none';
   successAlert.style.display = 'none';
 
-  if (!currentUser) {
-    navigate('#/login');
-    return;
-  }
+  const nameInput = document.getElementById('support-user-name');
+  const phoneInput = document.getElementById('support-user-phone');
+  const roleInput = document.getElementById('support-user-role');
 
-  // Populate user info fields
-  document.getElementById('support-user-name').value = capitalizeName(currentUser.name);
-  document.getElementById('support-user-phone').value = currentUser.phone;
-  
-  let displayRole = currentUser.role;
-  if (currentUser.role === 'educator') displayRole = 'Educator (Teacher)';
-  else if (currentUser.role === 'superadmin') displayRole = 'Super Admin';
-  document.getElementById('support-user-role').value = displayRole;
+  if (currentUser) {
+    nameInput.value = capitalizeName(currentUser.name);
+    nameInput.disabled = true;
+    phoneInput.value = currentUser.phone;
+    phoneInput.disabled = true;
+    
+    let displayRole = currentUser.role;
+    if (currentUser.role === 'educator') displayRole = 'Educator (Teacher)';
+    else if (currentUser.role === 'superadmin') displayRole = 'Super Admin';
+    roleInput.value = displayRole;
+    roleInput.disabled = true;
+  } else {
+    nameInput.value = '';
+    nameInput.disabled = false;
+    nameInput.placeholder = 'Enter your name';
+    nameInput.required = true;
+    
+    phoneInput.value = '';
+    phoneInput.disabled = false;
+    phoneInput.placeholder = 'Enter your phone number';
+    phoneInput.required = true;
+    
+    roleInput.value = '';
+    roleInput.disabled = false;
+    roleInput.placeholder = 'e.g., student / educator';
+    roleInput.required = true;
+  }
 
   // Clear inputs
   document.getElementById('support-subject').value = '';
@@ -4334,6 +4427,15 @@ function initEventHandlers() {
         modal.style.display = 'flex';
       }
     }
+
+    // Capture shift/move document button clicks (for admins)
+    const moveTrigger = e.target.closest('.btn-move-doc');
+    if (moveTrigger) {
+      e.preventDefault();
+      const id = moveTrigger.getAttribute('data-id');
+      const title = moveTrigger.getAttribute('data-title');
+      openMoveDocumentModal(id, title);
+    }
   });
 
   const btnDownloadAndroid = document.getElementById('btn-download-android');
@@ -4358,6 +4460,7 @@ function initEventHandlers() {
       downloadErrAlert.style.display = 'block';
     });
   }
+
 
   const btnCancelDownload = document.getElementById('modal-download-app-cancel');
   if (btnCancelDownload) {
@@ -5138,6 +5241,113 @@ function initEventHandlers() {
     });
   }
 
+    // Move Document Modal Handlers (Admin Only)
+    const moveDocForm = document.getElementById('form-move-document');
+    const closeMoveDocModal = () => {
+      document.getElementById('modal-move-document').style.display = 'none';
+    };
+
+    const btnCloseMoveDoc = document.getElementById('modal-move-document-close');
+    if (btnCloseMoveDoc) {
+      btnCloseMoveDoc.addEventListener('click', closeMoveDocModal);
+    }
+    const btnCancelMoveDoc = document.getElementById('modal-move-document-cancel');
+    if (btnCancelMoveDoc) {
+      btnCancelMoveDoc.addEventListener('click', closeMoveDocModal);
+    }
+
+    // Handle section selection change
+    const moveDocSectionSel = document.getElementById('move-doc-section');
+    if (moveDocSectionSel) {
+      moveDocSectionSel.addEventListener('change', async (e) => {
+        const section = e.target.value;
+        const folderGroup = document.getElementById('move-doc-folder-group');
+        const folderSelect = document.getElementById('move-doc-folder');
+
+        if (!section || section === 'syllabus') {
+          folderGroup.style.display = 'none';
+          folderSelect.removeAttribute('required');
+        } else {
+          folderSelect.innerHTML = '<option value="">Loading folders...</option>';
+          folderGroup.style.display = 'block';
+          folderSelect.setAttribute('required', 'required');
+
+          try {
+            const folders = await api.getFolders(section);
+            if (folders.length === 0) {
+              folderSelect.innerHTML = '<option value="">No folders available in this section</option>';
+            } else {
+              folderSelect.innerHTML = '<option value="">Select Target Folder</option>' +
+                folders.map(f => `<option value="${f.id}">${escapeHTML(f.name)}</option>`).join('');
+            }
+          } catch (err) {
+            console.error('Error loading folders for move:', err);
+            folderSelect.innerHTML = '<option value="">Error loading folders</option>';
+          }
+        }
+      });
+    }
+
+    if (moveDocForm) {
+      moveDocForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorAlert = document.getElementById('move-doc-error-alert');
+        const docId = document.getElementById('move-doc-id').value;
+        const section = document.getElementById('move-doc-section').value;
+        const folderId = document.getElementById('move-doc-folder').value;
+        const saveBtnSubmit = document.getElementById('btn-move-document-submit');
+
+        errorAlert.style.display = 'none';
+
+        if (!section) {
+          errorAlert.textContent = 'Target section is required';
+          errorAlert.style.display = 'block';
+          return;
+        }
+
+        if (section !== 'syllabus' && !folderId) {
+          errorAlert.textContent = 'Target folder is required';
+          errorAlert.style.display = 'block';
+          return;
+        }
+
+        // Map section to targetType for API
+        let apiType = '';
+        if (section === 'notes') apiType = 'notes';
+        else if (section === 'papers') apiType = 'paper';
+        else if (section === 'lab_manuals') apiType = 'lab_manual';
+        else if (section === 'books') apiType = 'book';
+        else if (section === 'roadmaps') apiType = 'roadmap';
+        else if (section === 'syllabus') apiType = 'syllabus';
+
+        saveBtnSubmit.disabled = true;
+        saveBtnSubmit.textContent = 'Shifting document...';
+
+        try {
+          await api.moveDocument(docId, apiType, folderId || null);
+          closeMoveDocModal();
+
+          // Refresh active views
+          const hash = window.location.hash || '#/';
+          if (hash === '#/my-uploads') {
+            await renderMyUploadsView();
+          } else if (hash === '#/notes') {
+            await renderNotesView();
+          } else if (hash === '#/papers') {
+            await renderPapersView();
+          } else if (hash === '#/resources') {
+            await renderResourcesView();
+          }
+        } catch (err) {
+          errorAlert.textContent = err.message || 'Failed to move document';
+          errorAlert.style.display = 'block';
+        } finally {
+          saveBtnSubmit.disabled = false;
+          saveBtnSubmit.textContent = 'Shift Document';
+        }
+      });
+    }
+
   // SEND MESSAGE MODAL (Admin Only)
   const sendMessageForm = document.getElementById('form-send-message');
   const closeSendMessageModal = () => {
@@ -5235,11 +5445,21 @@ function initEventHandlers() {
       lucide.createIcons();
 
       try {
-        await api.submitHelpRequest(subject, message);
+        const name = document.getElementById('support-user-name').value.trim();
+        const phone = document.getElementById('support-user-phone').value.trim();
+        const role = document.getElementById('support-user-role').value.trim();
+
+        await api.submitHelpRequest(subject, message, name, phone, role);
         successAlert.textContent = 'Your help and support request has been submitted successfully!';
         successAlert.style.display = 'block';
         document.getElementById('support-subject').value = '';
         document.getElementById('support-message').value = '';
+
+        if (!currentUser) {
+          document.getElementById('support-user-name').value = '';
+          document.getElementById('support-user-phone').value = '';
+          document.getElementById('support-user-role').value = '';
+        }
         
         // Scroll support container to top to show success alert
         const supportCard = document.querySelector('.support-card');
@@ -5466,8 +5686,25 @@ async function initApp() {
       startNotificationPolling();
     } catch (err) {
       console.error('Session validation failed:', err.message);
-      api.logout();
-      currentUser = null;
+      if (err.status === 401 || err.status === 403) {
+        api.logout();
+        currentUser = null;
+      } else {
+        // Fallback to cached localStorage user if server is offline or reconnecting
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            currentUser = JSON.parse(userStr);
+            startNotificationPolling();
+          } catch (e) {
+            api.logout();
+            currentUser = null;
+          }
+        } else {
+          api.logout();
+          currentUser = null;
+        }
+      }
     }
   }
 
