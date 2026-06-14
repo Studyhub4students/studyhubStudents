@@ -793,10 +793,10 @@ const api = {
     return await request('/announcements');
   },
 
-  async createAnnouncement(title, content) {
+  async createAnnouncement(title, content, docUrl) {
     return await request('/announcements', {
       method: 'POST',
-      body: { title, content }
+      body: { title, content, docUrl }
     });
   },
 
@@ -1137,8 +1137,6 @@ function updateNavbar() {
         <a href="#/generators" class="mobile-nav-link" id="mob-nav-generators"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> File Tools</a>
         <a href="#/reset-password" class="mobile-nav-link" id="mob-nav-reset-password"><i data-lucide="key-round" style="width: 18px; height: 18px;"></i> Reset Password</a>
         <a href="https://github.com/ankitgl200/studyhubStudents" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" id="mob-nav-contribute"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; color: var(--primary);"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg> Contribute</a>
-        <a href="#/terms" class="mobile-nav-link" id="mob-nav-terms"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> Terms of Service</a>
-        <a href="#/privacy" class="mobile-nav-link" id="mob-nav-privacy"><i data-lucide="shield" style="width: 18px; height: 18px;"></i> Privacy Policy</a>
 
         ${currentUser.role === 'student' ? `
           <a href="#/my-contributions" class="mobile-nav-link" id="mob-nav-my-contributions"><i data-lucide="award" style="width: 18px; height: 18px;"></i> My Contributions</a>
@@ -1211,8 +1209,6 @@ function updateNavbar() {
         <a href="#/resources" class="mobile-nav-link" id="mob-nav-resources"><i data-lucide="compass" style="width: 18px; height: 18px;"></i> Resources</a>
         <a href="#/support" class="mobile-nav-link" id="mob-nav-support"><i data-lucide="help-circle" style="width: 18px; height: 18px;"></i> Help & Support</a>
         <a href="#/generators" class="mobile-nav-link" id="mob-nav-generators"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> File Tools</a>
-        <a href="#/terms" class="mobile-nav-link" id="mob-nav-terms"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> Terms of Service</a>
-        <a href="#/privacy" class="mobile-nav-link" id="mob-nav-privacy"><i data-lucide="shield" style="width: 18px; height: 18px;"></i> Privacy Policy</a>
       </div>
       <button class="btn btn-primary btn-download-app-trigger" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-weight: 600; margin-top: auto; margin-bottom: 12px;">
         <i data-lucide="smartphone" style="width: 18px; height: 18px;"></i> Download App
@@ -1475,7 +1471,7 @@ async function renderHomeView() {
               <p class="announcement-content">${escapeHTML(ann.content).replace(/\n/g, '<br>')}</p>
               ${ann.docUrl ? `
                 <div style="margin-top: 10px; font-size: 13px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                  <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Open Associated Document
+                  <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Open Associated Link
                 </div>
               ` : ''}
               ${currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin' || currentUser.role === 'educator') ? `
@@ -5146,6 +5142,7 @@ function initEventHandlers() {
     e.preventDefault();
     const title = document.getElementById('ann-title').value.trim();
     const content = document.getElementById('ann-content').value.trim();
+    const docUrl = document.getElementById('ann-link').value.trim();
     if (!title || !content) return;
 
     const submitBtn = annForm.querySelector('button[type="submit"]');
@@ -5154,9 +5151,10 @@ function initEventHandlers() {
     submitBtn.textContent = 'Posting...';
 
     try {
-      await api.createAnnouncement(title, content);
+      await api.createAnnouncement(title, content, docUrl || null);
       document.getElementById('ann-title').value = '';
       document.getElementById('ann-content').value = '';
+      document.getElementById('ann-link').value = '';
       annForm.style.display = 'none';
       addAnnText.textContent = 'Add Announcement';
       await renderHomeView();
