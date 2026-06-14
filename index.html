@@ -173,6 +173,10 @@
                 <label class="form-label" for="ann-content">Content</label>
                 <textarea id="ann-content" class="form-input" style="min-height: 100px; resize: vertical;" placeholder="Details of the announcement..." required></textarea>
               </div>
+              <div class="form-group">
+                <label class="form-label" for="ann-link">Link / Document URL (Optional)</label>
+                <input type="url" id="ann-link" class="form-input" placeholder="https://example.com/details" />
+              </div>
               <button type="submit" class="btn btn-primary btn-sm">Post Announcement</button>
             </form>
 
@@ -1031,7 +1035,17 @@
       <div>
         <p style="font-weight: 700; font-size: 16px; margin-bottom: 8px;">Studyhub</p>
         <p>A central academic repository for students.</p>
-        <p style="font-size: 12px; opacity: 0.6;">&copy; <span id="footer-year">2026</span> Studyhub. Built for juniors, by seniors.</p>
+        
+        <!-- Social Connections -->
+        <div class="footer-socials" style="display: flex; justify-content: center; gap: 12px; align-items: center; margin: 12px 0 16px 0;">
+          <span style="font-size: 13px; opacity: 0.6;">Connect:</span>
+          <a href="https://www.instagram.com/studyhub_0fficial?utm_source=qr&igsh=dGh3cG02MnFhbTJl" target="_blank" rel="noopener noreferrer" class="footer-link" style="display: inline-flex; align-items: center; gap: 6px;" title="Follow us on Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+            Instagram
+          </a>
+        </div>
+
+        <p style="font-size: 12px; opacity: 0.6; margin-bottom: 24px;">&copy; <span id="footer-year">2026</span> Studyhub. Built for juniors, by seniors.</p>
       </div>
       <div class="footer-links">
         <a href="#/privacy" class="footer-link">Privacy Policy</a>
