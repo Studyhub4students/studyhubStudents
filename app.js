@@ -1030,6 +1030,12 @@ function updateNavbar() {
           <a href="#/reset-password" class="profile-dropdown-link" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-main); font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: var(--radius-sm); transition: var(--transition); margin-bottom: 8px; border: 1px solid var(--border-color); background-color: var(--primary-accent);">
             <i data-lucide="key-round" style="width: 14px; height: 14px; color: var(--primary);"></i> Reset Password
           </a>
+          <a href="#/terms" class="profile-dropdown-link" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-main); font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: var(--radius-sm); transition: var(--transition); margin-bottom: 8px; border: 1px solid var(--border-color); background-color: var(--primary-accent);">
+            <i data-lucide="file-text" style="width: 14px; height: 14px; color: var(--primary);"></i> Terms of Service
+          </a>
+          <a href="#/privacy" class="profile-dropdown-link" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-main); font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: var(--radius-sm); transition: var(--transition); margin-bottom: 8px; border: 1px solid var(--border-color); background-color: var(--primary-accent);">
+            <i data-lucide="shield" style="width: 14px; height: 14px; color: var(--primary);"></i> Privacy Policy
+          </a>
 
           <button id="btn-logout" class="btn btn-danger btn-sm profile-logout-btn" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; width: 100%;">
             <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> Logout
@@ -1102,6 +1108,8 @@ function updateNavbar() {
         <a href="#/support" class="mobile-nav-link" id="mob-nav-support"><i data-lucide="help-circle" style="width: 18px; height: 18px;"></i> Help & Support</a>
         <a href="#/generators" class="mobile-nav-link" id="mob-nav-generators"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> File Tools</a>
         <a href="#/reset-password" class="mobile-nav-link" id="mob-nav-reset-password"><i data-lucide="key-round" style="width: 18px; height: 18px;"></i> Reset Password</a>
+        <a href="#/terms" class="mobile-nav-link" id="mob-nav-terms"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> Terms of Service</a>
+        <a href="#/privacy" class="mobile-nav-link" id="mob-nav-privacy"><i data-lucide="shield" style="width: 18px; height: 18px;"></i> Privacy Policy</a>
 
         ${currentUser.role === 'student' ? `
           <a href="#/my-contributions" class="mobile-nav-link" id="mob-nav-my-contributions"><i data-lucide="award" style="width: 18px; height: 18px;"></i> My Contributions</a>
@@ -1174,6 +1182,8 @@ function updateNavbar() {
         <a href="#/resources" class="mobile-nav-link" id="mob-nav-resources"><i data-lucide="compass" style="width: 18px; height: 18px;"></i> Resources</a>
         <a href="#/support" class="mobile-nav-link" id="mob-nav-support"><i data-lucide="help-circle" style="width: 18px; height: 18px;"></i> Help & Support</a>
         <a href="#/generators" class="mobile-nav-link" id="mob-nav-generators"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> File Tools</a>
+        <a href="#/terms" class="mobile-nav-link" id="mob-nav-terms"><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> Terms of Service</a>
+        <a href="#/privacy" class="mobile-nav-link" id="mob-nav-privacy"><i data-lucide="shield" style="width: 18px; height: 18px;"></i> Privacy Policy</a>
       </div>
       <button class="btn btn-primary btn-download-app-trigger" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-weight: 600; margin-top: auto; margin-bottom: 12px;">
         <i data-lucide="smartphone" style="width: 18px; height: 18px;"></i> Download App
@@ -1199,7 +1209,7 @@ function updateNavbar() {
 }
 
 function handleAuthProtection(hash) {
-  const publicRoutes = ['#/login', '#/signup', '#/generators', '#/support'];
+  const publicRoutes = ['#/login', '#/signup', '#/generators', '#/support', '#/terms', '#/privacy'];
   if (!publicRoutes.includes(hash) && !currentUser) {
     navigate('#/login');
     return false;
@@ -1341,7 +1351,10 @@ async function router() {
     document.getElementById('reset-old-password').value = '';
     document.getElementById('reset-new-password').value = '';
     document.getElementById('reset-confirm-password').value = '';
-
+  } else if (hash === '#/terms') {
+    document.getElementById('view-terms').style.display = 'block';
+  } else if (hash === '#/privacy') {
+    document.getElementById('view-privacy').style.display = 'block';
   } else if (hash === '#/sonic') {
     document.getElementById('view-sonic').style.display = 'block';
     const container = document.getElementById('sonic-messages');
