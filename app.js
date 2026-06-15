@@ -3122,7 +3122,7 @@ async function renderAdminDashboardView() {
                 </span>
               </div>
             </div>
-            <div style="display: flex; align-items: center;">
+            <div class="user-actions" style="display: flex; align-items: center;">
               ${u.role === 'educator' && typeof u.points === 'number' ? `
                 <span class="user-tag" style="margin: 0 8px 0 0; padding: 4px 10px; font-size: 11px; font-weight: 700; background-color: var(--primary-accent); color: var(--primary-dark);">
                   ${u.points} pts
