@@ -722,7 +722,7 @@ body {
   right: 4px;
   display: flex;
   gap: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: var(--transition);
 }
 
@@ -1715,6 +1715,7 @@ body {
   .pending-doc-actions {
     width: 100%;
     justify-content: flex-end;
+  }
 }
 
 /* File Tool Generators Styles */
@@ -1891,6 +1892,58 @@ body {
 /* Typing Indicator Animation */
 #sonic-typing {
   animation: sonic-bubble-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Logo styling for Classic UI */
+.logo-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* --- SITE ADVERTISEMENT SPACE --- */
+.site-ad-space {
+  width: min(100%, 970px);
+  min-height: 120px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  margin: 48px auto 0;
+  padding: 18px;
+  border: 1px dashed var(--primary-light) !important;
+  border-radius: var(--radius);
+  background: var(--primary-accent) !important;
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+
+.site-ad-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--primary);
+  text-align: center;
+}
+
+.site-ad-placeholder svg {
+  width: 22px;
+  height: 22px;
+  color: var(--primary-light);
+}
+
+.site-ad-placeholder strong {
+  color: var(--primary-dark);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.site-ad-placeholder span {
+  color: var(--text-muted);
+  font-size: 11px;
 }
 
 
