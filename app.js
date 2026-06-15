@@ -1,4 +1,10 @@
 // --- DYNAMIC SCRIPT LOADERS (Performance Optimization) ---
+function refreshIcons() {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
 function loadScript(url) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${url}"]`)) {
@@ -49,35 +55,35 @@ function cleanLaTeX(text) {
   cleaned = cleaned.replace(/_\{\s*(.*?)\s*\}/g, '_$1');
   
   // Clean common LaTeX commands
-  cleaned = cleaned.replace(/\\Sigma/g, 'Σ')
-                   .replace(/\\theta/g, 'θ')
-                   .replace(/\\pi/g, 'π')
-                   .replace(/\\alpha/g, 'α')
-                   .replace(/\\beta/g, 'β')
-                   .replace(/\\gamma/g, 'γ')
-                   .replace(/\\delta/g, 'δ')
-                   .replace(/\\lambda/g, 'λ')
-                   .replace(/\\mu/g, 'μ')
-                   .replace(/\\infty/g, '∞')
-                   .replace(/\\times/g, '×')
-                   .replace(/\\div/g, '÷')
-                   .replace(/\\pm/g, '±')
-                   .replace(/\\neq/g, '≠')
-                   .replace(/\\leq/g, '≤')
-                   .replace(/\\geq/g, '≥')
-                   .replace(/\\approx/g, '≈')
-                   .replace(/\\rightarrow/g, '→')
-                   .replace(/\\Rightarrow/g, '⇒')
-                   .replace(/\\leftarrow/g, '←')
-                   .replace(/\\Leftarrow/g, '⇐')
-                   .replace(/\\leftrightarrow/g, '↔')
-                   .replace(/\\Leftrightarrow/g, '⇔')
-                   .replace(/\\cdot/g, '·')
-                   .replace(/\\to/g, '→')
+  cleaned = cleaned.replace(/\\Sigma/g, 'Î£')
+                   .replace(/\\theta/g, 'Î¸')
+                   .replace(/\\pi/g, 'Ï€')
+                   .replace(/\\alpha/g, 'Î±')
+                   .replace(/\\beta/g, 'Î²')
+                   .replace(/\\gamma/g, 'Î³')
+                   .replace(/\\delta/g, 'Î´')
+                   .replace(/\\lambda/g, 'Î»')
+                   .replace(/\\mu/g, 'Î¼')
+                   .replace(/\\infty/g, 'âˆž')
+                   .replace(/\\times/g, 'Ã—')
+                   .replace(/\\div/g, 'Ã·')
+                   .replace(/\\pm/g, 'Â±')
+                   .replace(/\\neq/g, 'â‰ ')
+                   .replace(/\\leq/g, 'â‰¤')
+                   .replace(/\\geq/g, 'â‰¥')
+                   .replace(/\\approx/g, 'â‰ˆ')
+                   .replace(/\\rightarrow/g, 'â†’')
+                   .replace(/\\Rightarrow/g, 'â‡’')
+                   .replace(/\\leftarrow/g, 'â†')
+                   .replace(/\\Leftarrow/g, 'â‡')
+                   .replace(/\\leftrightarrow/g, 'â†”')
+                   .replace(/\\Leftrightarrow/g, 'â‡”')
+                   .replace(/\\cdot/g, 'Â·')
+                   .replace(/\\to/g, 'â†’')
                    .replace(/\\text\{\s*(.*?)\s*\}/g, '$1')
                    .replace(/\\frac\{\s*(.*?)\s*\}\{\s*(.*?)\s*\}/g, '($1 / $2)')
-                   .replace(/\\sqrt\{\s*(.*?)\s*\}/g, '√($1)')
-                   .replace(/\\Delta/g, 'Δ');
+                   .replace(/\\sqrt\{\s*(.*?)\s*\}/g, 'âˆš($1)')
+                   .replace(/\\Delta/g, 'Î”');
   return cleaned;
 }
 
@@ -271,7 +277,7 @@ function appendSonicMessage(role, text) {
         font-size: 13px;
       `;
       bubble.innerHTML = `
-        <div style="font-size: 18px; margin-top: 2px;">⚡</div>
+        <div style="font-size: 18px; margin-top: 2px;">âš¡</div>
         <div style="flex: 1;">
           <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">SONIC</div>
           <div class="chat-text"></div>
@@ -312,7 +318,10 @@ function appendSonicMessage(role, text) {
 }
 
 async function askSonicDirect(userMsg) {
-  const HF_TOKEN = process.env.HF_TOKEN;
+  const HF_TOKEN = window.HF_TOKEN || '';
+  if (!HF_TOKEN) {
+    throw new Error('Browser Hugging Face token is not configured');
+  }
   const COMPLETIONS_URL = 'https://api-inference.huggingface.co/v1/chat/completions';
 
   const systemPrompt = `You are SONIC, a helpful AI study assistant.
@@ -320,7 +329,7 @@ STRICT RULES:
 1. ONLY answer questions related to studies, academics, homework, exams, courses, and educational topics. If the user asks a question that is NOT related to studies (such as casual chit-chat, hobbies, entertainment, sports, movies, games, jokes, personal questions, how to cook, etc.), you MUST politely decline and ask them to ask something related to studies.
 2. STRICTLY FORBIDDEN: Do NOT use LaTeX math equations or symbol wrappers like \\[ ... \\], $$ ... $$, \\( ... \\), or $ ... $.
 3. DO NOT write raw LaTeX math notation (e.g. \\frac, \\Sigma, \\Rightarrow, \\text, etc.).
-4. Use clean, plain-text math/science equations and unicode symbols (e.g., use 'F_net = m * a', 'a = F_net / m', 'E = m * c^2', 'ΣF = 0 ⇒ v = constant').
+4. Use clean, plain-text math/science equations and unicode symbols (e.g., use 'F_net = m * a', 'a = F_net / m', 'E = m * c^2', 'Î£F = 0 â‡’ v = constant').
 5. DO NOT include unnecessary introductory phrases (such as "Sure! I can teach you..." or "Here is what you need...") or polite concluding chit-chat. Directly output the relevant educational notes, formulas, or step-by-step explanations.
 6. Keep formatting clean and readable using standard bold text, list bullets, or simple markdown headers.`;
 
@@ -411,7 +420,7 @@ STRICT RULES:
 1. ONLY answer questions related to studies, academics, homework, exams, courses, and educational topics. If the user asks a question that is NOT related to studies (such as casual chit-chat, hobbies, entertainment, sports, movies, games, jokes, personal questions, how to cook, etc.), you MUST politely decline and ask them to ask something related to studies.
 2. STRICTLY FORBIDDEN: Do NOT use LaTeX math equations or symbol wrappers like \\[ ... \\], $$ ... $$, \\( ... \\), or $ ... $.
 3. DO NOT write raw LaTeX math notation (e.g. \\frac, \\Sigma, \\Rightarrow, \\text, etc.).
-4. Use clean, plain-text math/science equations and unicode symbols (e.g., use 'F_net = m * a', 'a = F_net / m', 'E = m * c^2', 'ΣF = 0 ⇒ v = constant').
+4. Use clean, plain-text math/science equations and unicode symbols (e.g., use 'F_net = m * a', 'a = F_net / m', 'E = m * c^2', 'Î£F = 0 â‡’ v = constant').
 5. DO NOT include unnecessary introductory phrases (such as "Sure! I can teach you..." or "Here is what you need...") or polite concluding chit-chat. Directly output the relevant educational notes, formulas, or step-by-step explanations.
 6. Keep formatting clean and readable using standard bold text, list bullets, or simple markdown headers.`;
 
@@ -453,7 +462,7 @@ STRICT RULES:
 1. ONLY answer questions related to studies, academics, homework, exams, courses, and educational topics. If the user asks a question that is NOT related to studies (such as casual chit-chat, hobbies, entertainment, sports, movies, games, jokes, personal questions, how to cook, etc.), you MUST politely decline and ask them to ask something related to studies.
 2. STRICTLY FORBIDDEN: Do NOT use LaTeX math equations or symbol wrappers like \\[ ... \\], $$ ... $$, \\( ... \\), or $ ... $.
 3. DO NOT write raw LaTeX math notation (e.g. \\frac, \\Sigma, \\Rightarrow, \\text, etc.).
-4. Use clean, plain-text math/science equations and unicode symbols (e.g., use 'F_net = m * a', 'a = F_net / m', 'E = m * c^2', 'ΣF = 0 ⇒ v = constant').
+4. Use clean, plain-text math/science equations and unicode symbols (e.g., use 'F_net = m * a', 'a = F_net / m', 'E = m * c^2', 'Î£F = 0 â‡’ v = constant').
 5. DO NOT include unnecessary introductory phrases (such as "Sure! I can teach you..." or "Here is what you need...") or polite concluding chit-chat. Directly output the relevant educational notes, formulas, or step-by-step explanations.
 6. Keep formatting clean and readable using standard bold text, list bullets, or simple markdown headers.`;
 
@@ -1098,7 +1107,7 @@ function updateNavbar() {
         container.innerHTML = `
           <!-- System / Welcome Message -->
           <div class="message-bubble system" style="align-self: flex-start; max-width: 85%; background: var(--white); border: 1px solid var(--border-color); border-radius: 0 16px 16px 16px; padding: 12px 16px; box-shadow: var(--shadow-sm); display: flex; gap: 10px;">
-            <div style="font-size: 18px; margin-top: 2px;">⚡</div>
+            <div style="font-size: 18px; margin-top: 2px;">âš¡</div>
             <div>
               <div style="font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">SONIC</div>
               <div style="font-size: 13px; color: var(--text-main); line-height: 1.5;" class="chat-text">
@@ -1230,7 +1239,7 @@ function updateNavbar() {
       });
     }
   }
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function handleAuthProtection(hash) {
@@ -1283,6 +1292,9 @@ function getHashQueryParams() {
 async function router() {
   const fullHash = window.location.hash || '#/';
   const hash = fullHash.split('?')[0];
+  const adSpace = document.getElementById('site-ad-space');
+
+  if (adSpace) adSpace.style.display = 'none';
   
   // Update navbar active state
   document.querySelectorAll('.nav-links .nav-link').forEach(link => {
@@ -1321,6 +1333,7 @@ async function router() {
   // Toggle page visibility
   document.querySelectorAll('.page-view').forEach(view => {
     view.style.display = 'none';
+    view.classList.remove('route-enter');
   });
 
   // Close any open modals when navigating
@@ -1384,9 +1397,26 @@ async function router() {
     document.getElementById('view-sonic').style.display = 'block';
     const container = document.getElementById('sonic-messages');
     if (container) container.scrollTop = container.scrollHeight;
+  } else {
+    window.location.hash = '#/';
+    return;
   }
 
-  lucide.createIcons();
+  const activeView = Array.from(document.querySelectorAll('.page-view'))
+    .find(view => view.style.display !== 'none');
+
+  if (activeView) {
+    requestAnimationFrame(() => activeView.classList.add('route-enter'));
+  }
+
+  if (adSpace) adSpace.style.display = 'flex';
+
+  if (hash !== '#/sonic') {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+
+  refreshIcons();
 }
 
 // --- VIEW RENDERERS ---
@@ -1493,7 +1523,7 @@ async function renderHomeView() {
         const originalHTML = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-        lucide.createIcons();
+        refreshIcons();
         try {
           await api.deleteAnnouncement(id);
           await renderHomeView();
@@ -1501,7 +1531,7 @@ async function renderHomeView() {
           alert(err.message || 'Failed to delete announcement');
           btn.disabled = false;
           btn.innerHTML = originalHTML;
-          lucide.createIcons();
+          refreshIcons();
         }
       });
     });
@@ -1509,7 +1539,7 @@ async function renderHomeView() {
   } catch (err) {
     container.innerHTML = `<div class="empty-state" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2)">Error loading announcements.</div>`;
   }
-  lucide.createIcons();
+  refreshIcons();
 }
 
 // 2. NOTES VIEW
@@ -1578,7 +1608,7 @@ async function renderNotesView() {
             ${isAdmin ? '<p style="font-size: 14px; margin-top: 6px;">Click "Add Subject Folder" to get started.</p>' : ''}
           </div>
         `;
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -1629,7 +1659,7 @@ async function renderNotesView() {
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 10px; height: 10px;"></i>';
-            lucide.createIcons();
+            refreshIcons();
             try {
               await api.deleteFolder(id);
               await renderNotesView();
@@ -1637,7 +1667,7 @@ async function renderNotesView() {
               alert(err.message || 'Failed to delete folder');
               btn.disabled = false;
               btn.innerHTML = originalHTML;
-              lucide.createIcons();
+              refreshIcons();
             }
           });
         });
@@ -1659,7 +1689,7 @@ async function renderNotesView() {
             ${isStaff ? '<p style="font-size: 14px; margin-top: 6px;">Click "Upload Note" to post the first PDF.</p>' : ''}
           </div>
         `;
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -1680,9 +1710,9 @@ async function renderNotesView() {
                   <h5>${escapeHTML(doc.title)}</h5>
                   <div class="doc-meta-details">
                     <span>Academic Year: ${escapeHTML(doc.year)}</span>
-                    <span>•</span>
+                    <span>â€¢</span>
                     <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
-                    <span>•</span>
+                    <span>â€¢</span>
                     <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -1717,7 +1747,7 @@ async function renderNotesView() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             await api.deleteDocument(id);
             await renderNotesView();
@@ -1725,7 +1755,7 @@ async function renderNotesView() {
             alert(err.message || 'Failed to delete note');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -1740,7 +1770,7 @@ async function renderNotesView() {
       content.innerHTML = `<div class="empty-state">Failed to load documents.</div>`;
     }
   }
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function backToNotesFolders() {
@@ -1816,7 +1846,7 @@ async function renderPapersView() {
             ${isAdmin ? '<p style="font-size: 14px; margin-top: 6px;">Click "Add Subject Folder" to get started.</p>' : ''}
           </div>
         `;
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -1867,7 +1897,7 @@ async function renderPapersView() {
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 10px; height: 10px;"></i>';
-            lucide.createIcons();
+            refreshIcons();
             try {
               await api.deleteFolder(id);
               await renderPapersView();
@@ -1875,7 +1905,7 @@ async function renderPapersView() {
               alert(err.message || 'Failed to delete folder');
               btn.disabled = false;
               btn.innerHTML = originalHTML;
-              lucide.createIcons();
+              refreshIcons();
             }
           });
         });
@@ -1953,9 +1983,9 @@ async function renderPapersView() {
                       <h5>${escapeHTML(doc.title)}</h5>
                       <div class="doc-meta-details">
                         <span>Academic Year: ${escapeHTML(doc.year)}</span>
-                        <span>•</span>
+                        <span>â€¢</span>
                         <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
-                        <span>•</span>
+                        <span>â€¢</span>
                         <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -2015,7 +2045,7 @@ async function renderPapersView() {
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-            lucide.createIcons();
+            refreshIcons();
             try {
               await api.deleteDocument(id);
               await renderPapersView();
@@ -2023,7 +2053,7 @@ async function renderPapersView() {
               alert(err.message || 'Failed to delete paper');
               btn.disabled = false;
               btn.innerHTML = originalHTML;
-              lucide.createIcons();
+              refreshIcons();
             }
           });
         });
@@ -2034,7 +2064,7 @@ async function renderPapersView() {
             handleLikeToggle(e, renderPapersView);
           });
         });
-        lucide.createIcons();
+        refreshIcons();
       };
 
       renderDocsList();
@@ -2043,7 +2073,7 @@ async function renderPapersView() {
       content.innerHTML = `<div class="empty-state">Failed to load papers documents.</div>`;
     }
   }
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function backToPapersFolders() {
@@ -2246,7 +2276,7 @@ async function renderResourcesView() {
             ${isStaff ? '<p style="font-size: 14px; margin-top: 6px;">Click "Upload PDF" to add a syllabus.</p>' : ''}
           </div>
         `;
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -2267,7 +2297,7 @@ async function renderResourcesView() {
                   <h5>${escapeHTML(doc.title)}</h5>
                   <div class="doc-meta-details">
                     <span>Year: ${escapeHTML(doc.year)}</span>
-                    <span>•</span>
+                    <span>â€¢</span>
                     <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
                   </div>
                 </div>
@@ -2294,7 +2324,7 @@ async function renderResourcesView() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             await api.deleteDocument(id);
             await renderResourcesView();
@@ -2302,7 +2332,7 @@ async function renderResourcesView() {
             alert(err.message || 'Failed to delete');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -2330,7 +2360,7 @@ async function renderResourcesView() {
             ${isAdmin ? '<p style="font-size: 14px; margin-top: 6px;">Click "Add Subject Folder" to start.</p>' : ''}
           </div>
         `;
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -2377,7 +2407,7 @@ async function renderResourcesView() {
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 10px; height: 10px;"></i>';
-            lucide.createIcons();
+            refreshIcons();
             try {
               await api.deleteFolder(id);
               await renderResourcesView();
@@ -2385,7 +2415,7 @@ async function renderResourcesView() {
               alert(err.message || 'Failed to delete folder');
               btn.disabled = false;
               btn.innerHTML = originalHTML;
-              lucide.createIcons();
+              refreshIcons();
             }
           });
         });
@@ -2410,7 +2440,7 @@ async function renderResourcesView() {
             ${isStaff ? '<p style="font-size: 14px; margin-top: 6px;">Click "Upload PDF" to add files.</p>' : ''}
           </div>
         `;
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -2433,7 +2463,7 @@ async function renderResourcesView() {
                   <h5>${escapeHTML(doc.title)}</h5>
                   <div class="doc-meta-details">
                     <span>Year: ${escapeHTML(doc.year)}</span>
-                    <span>•</span>
+                    <span>â€¢</span>
                     <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
                   </div>
                 </div>
@@ -2460,7 +2490,7 @@ async function renderResourcesView() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             await api.deleteDocument(id);
             await renderResourcesView();
@@ -2468,7 +2498,7 @@ async function renderResourcesView() {
             alert(err.message || 'Failed to delete');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -2502,7 +2532,7 @@ async function renderResourcesView() {
             ${isStaffOrEducator ? `<p style="font-size: 14px; margin-top: 6px;">Click ${!currentResourcesFolder ? '"Add Folder" or ' : ''}"Upload PDF" to get started.</p>` : ''}
           </div>
         `;
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -2542,9 +2572,9 @@ async function renderResourcesView() {
                     <h5>${escapeHTML(doc.title)}</h5>
                     <div class="doc-meta-details">
                       <span>Year: ${escapeHTML(doc.year)}</span>
-                      <span>•</span>
+                      <span>â€¢</span>
                       <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
-                      <span>•</span>
+                      <span>â€¢</span>
                       <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
@@ -2607,7 +2637,7 @@ async function renderResourcesView() {
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 10px; height: 10px;"></i>';
-            lucide.createIcons();
+            refreshIcons();
             try {
               await api.deleteFolder(id);
               await renderResourcesView();
@@ -2615,7 +2645,7 @@ async function renderResourcesView() {
               alert(err.message || 'Failed to delete folder');
               btn.disabled = false;
               btn.innerHTML = originalHTML;
-              lucide.createIcons();
+              refreshIcons();
             }
           });
         });
@@ -2627,7 +2657,7 @@ async function renderResourcesView() {
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-            lucide.createIcons();
+            refreshIcons();
             try {
               await api.deleteDocument(id);
               await renderResourcesView();
@@ -2635,7 +2665,7 @@ async function renderResourcesView() {
               alert(err.message || 'Failed to delete roadmap');
               btn.disabled = false;
               btn.innerHTML = originalHTML;
-              lucide.createIcons();
+              refreshIcons();
             }
           });
         });
@@ -2657,7 +2687,7 @@ async function renderResourcesView() {
     renderGPAThresholdsView(content);
   }
 
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function handleResourcesBack() {
@@ -2833,7 +2863,7 @@ function renderGPAThresholdsView(mountElement) {
       </div>
     `;
 
-    lucide.createIcons();
+    refreshIcons();
 
     // Event Triggers
     document.getElementById('tab-sgpa-trigger').addEventListener('click', () => { activeTab = 'sgpa'; computeAndRender(); });
@@ -2974,7 +3004,7 @@ async function renderAdminDashboardView() {
         <div class="user-card">
           <div class="user-info">
             <h5>${escapeHTML(capitalizeName(u.name))}</h5>
-            <p>Phone: ${escapeHTML(u.phone)} • Requested Role: <strong style="text-transform: capitalize; color: var(--primary);">${escapeHTML(u.role)}</strong></p>
+            <p>Phone: ${escapeHTML(u.phone)} â€¢ Requested Role: <strong style="text-transform: capitalize; color: var(--primary);">${escapeHTML(u.role)}</strong></p>
             <p style="font-size: 11px; margin-top: 2px;">Registered: ${new Date(u.createdAt).toLocaleString()}</p>
           </div>
           <div class="user-actions">
@@ -2993,7 +3023,7 @@ async function renderAdminDashboardView() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             await api.approveUser(btn.getAttribute('data-id'));
             await renderAdminDashboardView();
@@ -3001,7 +3031,7 @@ async function renderAdminDashboardView() {
             alert(err.message || 'Approval failed');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -3012,7 +3042,7 @@ async function renderAdminDashboardView() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             await api.rejectUser(btn.getAttribute('data-id'));
             await renderAdminDashboardView();
@@ -3020,7 +3050,7 @@ async function renderAdminDashboardView() {
             alert(err.message || 'Rejection failed');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -3057,7 +3087,7 @@ async function renderAdminDashboardView() {
         allContainer.innerHTML = `<div class="empty-state">No users found in this category.</div>`;
         const dirShowMoreContainer = document.getElementById('directory-show-more-container');
         if (dirShowMoreContainer) dirShowMoreContainer.innerHTML = '';
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -3127,7 +3157,7 @@ async function renderAdminDashboardView() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 12px; height: 12px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             const res = await api.promoteUser(btn.getAttribute('data-id'));
             alert(res.message || 'Successfully promoted user to Super Admin!');
@@ -3136,7 +3166,7 @@ async function renderAdminDashboardView() {
             alert(err.message || 'Promotion failed');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -3147,7 +3177,7 @@ async function renderAdminDashboardView() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 12px; height: 12px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             await api.deleteUser(btn.getAttribute('data-id'));
             await renderAdminDashboardView();
@@ -3155,7 +3185,7 @@ async function renderAdminDashboardView() {
             alert(err.message || 'Deletion failed');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -3189,7 +3219,7 @@ async function renderAdminDashboardView() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 12px; height: 12px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             const res = await api.adminResetPassword(userId);
             alert(res.message || 'Successfully reset password to 123456!');
@@ -3198,7 +3228,7 @@ async function renderAdminDashboardView() {
           } finally {
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -3222,7 +3252,7 @@ async function renderAdminDashboardView() {
         }
       }
 
-      lucide.createIcons();
+      refreshIcons();
     };
 
     updateDirectoryView();
@@ -3261,9 +3291,9 @@ async function renderAdminDashboardView() {
                     <h5 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">${escapeHTML(capitalizeName(t.name))}</h5>
                     <div class="ticket-user-meta">
                       <span class="profile-role-badge" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 6px; font-size: 10px; font-weight: 600; text-transform: capitalize;">${roleBadge}</span>
-                      <span>•</span>
+                      <span>â€¢</span>
                       <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="phone" style="width: 12px; height: 12px;"></i> ${escapeHTML(t.phone)}</span>
-                      <span>•</span>
+                      <span>â€¢</span>
                       <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="calendar" style="width: 12px; height: 12px;"></i> ${new Date(t.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
@@ -3296,7 +3326,7 @@ async function renderAdminDashboardView() {
               const originalHTML = btn.innerHTML;
               btn.disabled = true;
               btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i> Updating...';
-              lucide.createIcons();
+              refreshIcons();
               try {
                 await api.resolveHelpRequest(id);
                 await renderAdminDashboardView();
@@ -3304,7 +3334,7 @@ async function renderAdminDashboardView() {
                 alert(err.message || 'Failed to update request');
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
-                lucide.createIcons();
+                refreshIcons();
               }
             });
           });
@@ -3317,7 +3347,7 @@ async function renderAdminDashboardView() {
               const originalHTML = btn.innerHTML;
               btn.disabled = true;
               btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i> Deleting...';
-              lucide.createIcons();
+              refreshIcons();
               try {
                 await api.deleteHelpRequest(id);
                 await renderAdminDashboardView();
@@ -3325,7 +3355,7 @@ async function renderAdminDashboardView() {
                 alert(err.message || 'Failed to delete request');
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
-                lucide.createIcons();
+                refreshIcons();
               }
             });
           });
@@ -3435,7 +3465,7 @@ async function renderAdminDashboardView() {
                 alert(err.message || 'Failed to update message');
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
-                lucide.createIcons();
+                refreshIcons();
               }
             });
           });
@@ -3457,7 +3487,7 @@ async function renderAdminDashboardView() {
                 alert(err.message || 'Failed to delete message');
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
-                lucide.createIcons();
+                refreshIcons();
               }
             });
           });
@@ -3493,7 +3523,7 @@ async function renderAdminDashboardView() {
 
     await renderPendingContributions();
 
-    lucide.createIcons();
+    refreshIcons();
 
   } catch (err) {
     errorAlert.textContent = err.message || 'Failed to load control panel directory';
@@ -3657,7 +3687,7 @@ function renderScanPreviewGallery() {
   });
   
   if (window.lucide) {
-    window.lucide.createIcons();
+    window.refreshIcons();
   }
 }
 
@@ -4040,9 +4070,9 @@ function renderFilteredMyUploads() {
                 <h5>${escapeHTML(doc.title)} <span class="user-tag" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 11px;">${displayType}</span></h5>
                 <div class="doc-meta-details">
                   <span>Subject: ${escapeHTML(doc.subject || 'General')}</span>
-                  <span>•</span>
+                  <span>â€¢</span>
                   <span>Year: ${escapeHTML(doc.year || 'N/A')}</span>
-                  <span>•</span>
+                  <span>â€¢</span>
                   <span>Uploaded: ${new Date(doc.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -4093,7 +4123,7 @@ function renderFilteredMyUploads() {
       const originalHTML = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-      lucide.createIcons();
+      refreshIcons();
       try {
         await api.deleteDocument(id);
         await renderMyUploadsView();
@@ -4101,12 +4131,12 @@ function renderFilteredMyUploads() {
         alert(err.message || 'Failed to delete document');
         btn.disabled = false;
         btn.innerHTML = originalHTML;
-        lucide.createIcons();
+        refreshIcons();
       }
     });
   });
 
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function openEditDocumentModal(docId, title, subject, year) {
@@ -4187,7 +4217,7 @@ async function renderSupportView() {
     document.getElementById('support-subject').value = '';
     document.getElementById('support-message').value = '';
   }
-  lucide.createIcons();
+  refreshIcons();
 }
 
 // --- FILE TOOLS / GENERATORS PAGE LOGIC ---
@@ -4346,7 +4376,7 @@ async function renderGeneratorsView() {
 
   // Initial update
   updatePreview();
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function renderIndexInputs() {
@@ -4410,7 +4440,7 @@ function renderIndexInputs() {
     }
   });
 
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function updatePreview() {
@@ -5193,7 +5223,7 @@ function initEventHandlers() {
         errorAlert.className = 'alert alert-danger';
       }
       btnContent.innerHTML = '<i data-lucide="log-in" style="width:18px;height:18px;"></i> Login';
-      lucide.createIcons();
+      refreshIcons();
     }
   });
 
@@ -5210,7 +5240,7 @@ function initEventHandlers() {
         input.type = 'password';
         icon.setAttribute('data-lucide', 'eye');
       }
-      lucide.createIcons();
+      refreshIcons();
     });
   }
 
@@ -5226,7 +5256,7 @@ function initEventHandlers() {
         input.type = 'password';
         icon.setAttribute('data-lucide', 'eye');
       }
-      lucide.createIcons();
+      refreshIcons();
     });
   }
 
@@ -5243,7 +5273,7 @@ function initEventHandlers() {
         input.type = 'password';
         icon.setAttribute('data-lucide', 'eye');
       }
-      lucide.createIcons();
+      refreshIcons();
     });
   }
 
@@ -5259,7 +5289,7 @@ function initEventHandlers() {
         input.type = 'password';
         icon.setAttribute('data-lucide', 'eye');
       }
-      lucide.createIcons();
+      refreshIcons();
     });
   }
 
@@ -5275,7 +5305,7 @@ function initEventHandlers() {
         input.type = 'password';
         icon.setAttribute('data-lucide', 'eye');
       }
-      lucide.createIcons();
+      refreshIcons();
     });
   }
 
@@ -5300,7 +5330,7 @@ function initEventHandlers() {
         errorAlert.textContent = 'New password must be at least 6 characters';
         errorAlert.style.display = 'block';
         btnContent.innerHTML = '<i data-lucide="save" style="width: 18px; height: 18px;"></i> Change Password';
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -5308,7 +5338,7 @@ function initEventHandlers() {
         errorAlert.textContent = 'New passwords do not match';
         errorAlert.style.display = 'block';
         btnContent.innerHTML = '<i data-lucide="save" style="width: 18px; height: 18px;"></i> Change Password';
-        lucide.createIcons();
+        refreshIcons();
         return;
       }
 
@@ -5326,7 +5356,7 @@ function initEventHandlers() {
         errorAlert.style.display = 'block';
       } finally {
         btnContent.innerHTML = '<i data-lucide="save" style="width: 18px; height: 18px;"></i> Change Password';
-        lucide.createIcons();
+        refreshIcons();
       }
     });
   }
@@ -5340,9 +5370,9 @@ function initEventHandlers() {
   if (roleSelect && roleHint) {
     roleSelect.addEventListener('change', (e) => {
       if (e.target.value === 'student') {
-        roleHint.textContent = '✓ Instant approval. Get immediate access.';
+        roleHint.textContent = 'âœ“ Instant approval. Get immediate access.';
       } else {
-        roleHint.textContent = '⚠ Requires Admin manual approval before logging in.';
+        roleHint.textContent = 'âš  Requires Admin manual approval before logging in.';
       }
     });
   }
@@ -5367,7 +5397,7 @@ function initEventHandlers() {
       errorAlert.textContent = 'Phone number must be at least 10 digits';
       errorAlert.style.display = 'block';
       btnContent.innerHTML = '<i data-lucide="user-plus" style="width:18px;height:18px;"></i> Register';
-      lucide.createIcons();
+      refreshIcons();
       return;
     }
 
@@ -5388,7 +5418,7 @@ function initEventHandlers() {
       errorAlert.style.display = 'block';
     } finally {
       btnContent.innerHTML = '<i data-lucide="user-plus" style="width:18px;height:18px;"></i> Register';
-      lucide.createIcons();
+      refreshIcons();
     }
   });
 
@@ -6093,7 +6123,7 @@ function initEventHandlers() {
       submitBtn.disabled = true;
       const originalHTML = btnContent.innerHTML;
       btnContent.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 18px; height: 18px;"></i> Submitting...';
-      lucide.createIcons();
+      refreshIcons();
 
       try {
         const name = document.getElementById('support-user-name').value.trim();
@@ -6121,7 +6151,7 @@ function initEventHandlers() {
       } finally {
         submitBtn.disabled = false;
         btnContent.innerHTML = originalHTML;
-        lucide.createIcons();
+        refreshIcons();
       }
     });
   }
@@ -6214,7 +6244,7 @@ function showNotificationModal(notif) {
   if (modal && contentEl) {
     contentEl.textContent = notif.message;
     modal.style.display = 'flex';
-    lucide.createIcons(); // trigger icon rendering inside modal
+    refreshIcons(); // trigger icon rendering inside modal
     
     // Bind dismiss handlers
     const closeBtn = document.getElementById('modal-view-notification-close');
@@ -6329,6 +6359,8 @@ async function initApp() {
 
   const token = localStorage.getItem('token');
   document.getElementById('view-loading').style.display = 'flex';
+  const adSpace = document.getElementById('site-ad-space');
+  if (adSpace) adSpace.style.display = 'none';
 
   if (token) {
     try {
@@ -6374,6 +6406,11 @@ async function initApp() {
   initSonicEventHandlers();
   initContributionEventHandlers();
   initEditorEventHandlers();
+  
+  // Initialize UI theme toggle switch
+  if (typeof initThemeToggleHandler === 'function') {
+    initThemeToggleHandler();
+  }
   
   // Run routing trigger
   await router();
@@ -6445,7 +6482,7 @@ async function renderTeacherDashboardView() {
                 ${isSelf ? '<span class="user-tag" style="background-color: var(--success-accent); color: var(--success); font-size: 10px; padding: 2px 6px;">You</span>' : ''}
               </h4>
               <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">
-                ${t.uploads} uploads • ${t.likes} likes
+                ${t.uploads} uploads â€¢ ${t.likes} likes
               </p>
             </div>
           </div>
@@ -6458,7 +6495,7 @@ async function renderTeacherDashboardView() {
       `;
     }).join('');
 
-    lucide.createIcons();
+    refreshIcons();
   } catch (err) {
     console.error('Error loading teacher stats/ranking:', err);
     rankingListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load stats/ranking: ${escapeHTML(err.message)}</div>`;
@@ -6490,10 +6527,10 @@ async function renderPendingContributions() {
               <div class="doc-meta">
                 <h5 style="font-size: 16px; margin-bottom: 4px; color: var(--primary-dark); font-weight: 700;">${escapeHTML(d.title)}</h5>
                 <p style="font-size: 13px; color: var(--text-main); margin-bottom: 4px;">
-                  Category: <strong>${escapeHTML(displayType)}</strong> • Subject: <strong>${escapeHTML(d.subject || 'N/A')}</strong>
+                  Category: <strong>${escapeHTML(displayType)}</strong> â€¢ Subject: <strong>${escapeHTML(d.subject || 'N/A')}</strong>
                 </p>
                 <p style="font-size: 12px; color: var(--text-muted);">
-                  Contributor: <strong>${escapeHTML(d.contributorName)}</strong> (${escapeHTML(d.contributorPhone)}) • Year: ${escapeHTML(d.year || 'N/A')}
+                  Contributor: <strong>${escapeHTML(d.contributorName)}</strong> (${escapeHTML(d.contributorPhone)}) â€¢ Year: ${escapeHTML(d.year || 'N/A')}
                 </p>
                 <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
                   Submitted: ${new Date(d.createdAt).toLocaleString()}
@@ -6522,7 +6559,7 @@ async function renderPendingContributions() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             await api.approveDocument(docId);
             await renderAdminDashboardView();
@@ -6530,7 +6567,7 @@ async function renderPendingContributions() {
             alert(err.message || 'Failed to approve resource');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -6543,7 +6580,7 @@ async function renderPendingContributions() {
           const originalHTML = btn.innerHTML;
           btn.disabled = true;
           btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 14px; height: 14px;"></i>';
-          lucide.createIcons();
+          refreshIcons();
           try {
             await api.rejectDocument(docId);
             await renderAdminDashboardView();
@@ -6551,7 +6588,7 @@ async function renderPendingContributions() {
             alert(err.message || 'Failed to reject resource');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
-            lucide.createIcons();
+            refreshIcons();
           }
         });
       });
@@ -6617,7 +6654,7 @@ function initContributionEventHandlers() {
         subjectSelect.disabled = true;
         subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject Folder</option>';
       }
-      lucide.createIcons();
+      refreshIcons();
     });
   }
 
@@ -6828,7 +6865,7 @@ async function renderMyContributionsView() {
     </div>
   `;
 
-  lucide.createIcons();
+  refreshIcons();
 
   const acceptedEl = document.getElementById('stats-contributions-accepted');
   const likesEl = document.getElementById('stats-contributions-likes');
@@ -6871,10 +6908,10 @@ async function renderMyContributionsView() {
                 <div class="doc-meta">
                   <h5 style="font-size: 15px; font-weight: 700; color: var(--primary-dark); margin: 0 0 4px 0;">${escapeHTML(c.title)}</h5>
                   <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 4px 0;">
-                    Category: <strong>${escapeHTML(displayType)}</strong> • Subject: <strong>${escapeHTML(c.subject || 'N/A')}</strong>
+                    Category: <strong>${escapeHTML(displayType)}</strong> â€¢ Subject: <strong>${escapeHTML(c.subject || 'N/A')}</strong>
                   </p>
                   <p style="font-size: 11px; color: var(--text-muted); margin: 0;">
-                    Submitted: ${new Date(c.createdAt).toLocaleDateString()} • Likes: ${c.likesCount}
+                    Submitted: ${new Date(c.createdAt).toLocaleDateString()} â€¢ Likes: ${c.likesCount}
                   </p>
                 </div>
               </div>
@@ -6889,10 +6926,95 @@ async function renderMyContributionsView() {
         }).join('');
       }
     }
-    lucide.createIcons();
+    refreshIcons();
   } catch (err) {
     console.error('Error fetching student contributions stats:', err);
     if (listEl) listEl.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load contributions details: ${escapeHTML(err.message)}</div>`;
   }
 }
 
+
+
+/* --- UI STYLE THEME SWITCHER LOGIC (MODERN / CLASSIC) --- */
+function initThemeToggleHandler() {
+  const toggle = document.getElementById('ui-theme-toggle');
+  if (toggle) {
+    const activeTheme = localStorage.getItem('studyhub-ui-theme') || 'modern';
+    toggle.checked = (activeTheme === 'modern');
+
+    toggle.addEventListener('change', (e) => {
+      const isModern = e.target.checked;
+      const targetTheme = isModern ? 'modern' : 'old';
+      applyTheme(targetTheme, true);
+    });
+  }
+}
+
+function applyTheme(theme, animate = true) {
+  const linkId = 'theme-stylesheet';
+  let link = document.getElementById(linkId);
+  const href = theme === 'modern' ? 'modern.css?v=1.0.5' : 'old.css?v=1.0.5';
+
+  localStorage.setItem('studyhub-ui-theme', theme);
+
+  // Sync checkboxes across elements if multiple exist
+  const toggles = document.querySelectorAll('#ui-theme-toggle');
+  toggles.forEach(t => {
+    t.checked = (theme === 'modern');
+  });
+
+  if (!link) {
+    link = document.createElement('link');
+    link.id = linkId;
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+    return;
+  }
+
+  if (link.getAttribute('href') === href) {
+    return; // Already applied
+  }
+
+  if (!animate) {
+    link.setAttribute('href', href);
+    return;
+  }
+
+  const overlay = document.getElementById('theme-transition-overlay');
+  if (overlay) {
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
+  }
+
+  setTimeout(() => {
+    const newLink = document.createElement('link');
+    newLink.rel = 'stylesheet';
+    newLink.href = href;
+    newLink.onload = () => {
+      link.setAttribute('href', href);
+      newLink.remove();
+      
+      // Refresh lucide icons
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+
+      setTimeout(() => {
+        if (overlay) {
+          overlay.style.opacity = '0';
+          overlay.style.pointerEvents = 'none';
+        }
+      }, 150);
+    };
+    newLink.onerror = () => {
+      link.setAttribute('href', href);
+      newLink.remove();
+      if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+      }
+    };
+    document.head.appendChild(newLink);
+  }, 250); // Wait for overlay to fade in completely
+}
