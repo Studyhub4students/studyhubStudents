@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Studyhub - Notes, Papers</title>
+  <title>Studyhub - Notes, Papers, and Resources</title>
   <meta name="description" content="A comprehensive academic sharing resource hub for notes, PYQs, and textbooks.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://js.puter.com">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-MLBCW8QCG1"></script>
   <script>
@@ -592,6 +596,18 @@
             <p id="admin-directory-hint" style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">
               Admin view: You can manage and delete Student accounts only.
             </p>
+            <div class="search-box-container" style="display: flex; gap: 8px; margin-bottom: 20px; max-width: 100%;">
+              <div style="position: relative; flex: 1;">
+                <input type="text" id="admin-user-search-input" placeholder="Search by name or phone..." style="width: 100%; padding: 10px 16px 10px 40px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main); font-size: 14px; outline: none; transition: border-color 0.2s;" />
+                <i data-lucide="search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted); pointer-events: none;"></i>
+              </div>
+              <button id="btn-admin-user-search" class="btn btn-primary" style="padding: 10px 20px; font-weight: 600; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                Search
+              </button>
+              <button id="btn-admin-user-search-clear" class="btn btn-secondary" style="padding: 10px 16px; display: none; align-items: center; justify-content: center; background-color: #fee2e2; color: #ef4444; border: 1px solid #fee2e2;" title="Clear Search">
+                <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+              </button>
+            </div>
             <div class="calculator-tabs" id="directory-tabs" style="margin-bottom: 20px;">
               <!-- Dynamic tabs loaded here -->
             </div>
@@ -787,6 +803,11 @@
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
                 <span id="support-btn-content" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                   <i data-lucide="send" style="width: 18px; height: 18px;"></i> Submit Request
+                </span>
+              </button>
+              <button type="button" id="btn-show-support-history" class="btn btn-secondary" style="width: 100%; margin-top: 10px; display: none;">
+                <span style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <i data-lucide="history" style="width: 18px; height: 18px;"></i> Show History
                 </span>
               </button>
             </form>
@@ -1609,8 +1630,27 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://js.puter.com/v2/"></script>
+  <!-- Support History Modal -->
+  <div id="modal-support-history" class="modal-overlay" style="display: none; z-index: 1100;">
+    <div class="modal-content" style="max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+      <div class="modal-header">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px; color: var(--primary-dark);">
+          <i data-lucide="history" style="width: 22px; height: 22px; color: var(--primary);"></i>
+          Support History
+        </h3>
+        <button type="button" id="modal-support-history-close" style="background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; padding: 4px;">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div id="support-history-list" style="padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; flex: 1;">
+        <!-- History items rendered here -->
+      </div>
+      <div class="form-actions">
+        <button type="button" id="btn-support-history-close" class="btn btn-secondary" style="width: 100%;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/app.js?v=1.0.5"></script>
 </body>
 </html>
