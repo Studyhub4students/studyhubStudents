@@ -26,7 +26,7 @@
   --radius: 16px;
   --radius-sm: 8px;
   --radius-lg: 24px;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -1584,7 +1584,7 @@ body {
   cursor: pointer !important;
   color: var(--text-muted) !important;
   box-shadow: var(--shadow-sm) !important;
-  transition: all 0.2s ease !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
   z-index: 10;
 }
 
@@ -1625,7 +1625,8 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 999;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: pulse-light 2s infinite;
 }
 
@@ -1657,7 +1658,8 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 999;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: pulse-light 2s infinite;
 }
 
@@ -1985,7 +1987,7 @@ body {
     --radius: 18px;
     --radius-sm: 11px;
     --radius-lg: 28px;
-    --transition: all 0.22s ease;
+    --transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease, opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
   }
 
   * {
@@ -2215,6 +2217,7 @@ body {
     height: 230px;
     position: relative;
     transform-style: preserve-3d;
+    will-change: transform;
     animation: stageFloat 5.5s ease-in-out infinite;
   }
 
@@ -2236,6 +2239,7 @@ body {
     border: 1px solid rgba(109, 93, 252, 0.28);
     border-radius: 50%;
     transform-style: preserve-3d;
+    will-change: transform;
   }
 
   .model-ring.ring-one {
@@ -2359,6 +2363,7 @@ body {
     color: var(--primary);
     box-shadow: 0 12px 24px rgba(46, 38, 125, 0.14);
     backdrop-filter: blur(8px);
+    will-change: transform;
   }
 
   .model-chip svg {
@@ -4766,7 +4771,7 @@ body {
   z-index: 90;
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: top 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
   top: 74px;
 }
 
