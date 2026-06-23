@@ -827,6 +827,10 @@ const api = {
     return await request('/help');
   },
 
+  async getMyHelpRequests() {
+    return await request('/help/my');
+  },
+
   async resolveHelpRequest(requestId) {
     return await request(`/help/resolve/${requestId}`, {
       method: 'POST'
@@ -920,6 +924,7 @@ let currentResourcesSection = 'root'; // 'root' | 'syllabus' | 'lab_manuals' | '
 let roadmapFolderStack = [];
 let notesFoldersList = []; // Kept in memory to populate syllabus uploads
 let activeDirectoryTab = 'admin'; // 'admin' | 'teacher' | 'student'
+let adminUserSearchQuery = '';
 let directoryVisibleCount = 5;
 let helpRequestsVisibleCount = 5;
 let notificationsVisibleCount = 5;
@@ -1441,7 +1446,7 @@ async function renderHomeView() {
     leaderboardList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted);">Loading leaderboard...</div>';
     api.getTeacherRanking()
       .then(ranking => {
-        const topRanking = ranking.slice(0, 10);
+        const topRanking = ranking.slice(0, 3);
         if (topRanking.length === 0) {
           leaderboardList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 10px 0;">No educators ranked yet</div>';
         } else {
@@ -1710,9 +1715,9 @@ async function renderNotesView() {
                   <h5>${escapeHTML(doc.title)}</h5>
                   <div class="doc-meta-details">
                     <span>Academic Year: ${escapeHTML(doc.year)}</span>
-                    <span>â€¢</span>
+                    <span>&bull;</span>
                     <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
-                    <span>â€¢</span>
+                    <span>&bull;</span>
                     <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -1983,9 +1988,9 @@ async function renderPapersView() {
                       <h5>${escapeHTML(doc.title)}</h5>
                       <div class="doc-meta-details">
                         <span>Academic Year: ${escapeHTML(doc.year)}</span>
-                        <span>â€¢</span>
+                        <span>&bull;</span>
                         <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
-                        <span>â€¢</span>
+                        <span>&bull;</span>
                         <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -2297,7 +2302,7 @@ async function renderResourcesView() {
                   <h5>${escapeHTML(doc.title)}</h5>
                   <div class="doc-meta-details">
                     <span>Year: ${escapeHTML(doc.year)}</span>
-                    <span>â€¢</span>
+                    <span>&bull;</span>
                     <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
                   </div>
                 </div>
@@ -2463,7 +2468,7 @@ async function renderResourcesView() {
                   <h5>${escapeHTML(doc.title)}</h5>
                   <div class="doc-meta-details">
                     <span>Year: ${escapeHTML(doc.year)}</span>
-                    <span>â€¢</span>
+                    <span>&bull;</span>
                     <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
                   </div>
                 </div>
@@ -2572,9 +2577,9 @@ async function renderResourcesView() {
                     <h5>${escapeHTML(doc.title)}</h5>
                     <div class="doc-meta-details">
                       <span>Year: ${escapeHTML(doc.year)}</span>
-                      <span>â€¢</span>
+                      <span>&bull;</span>
                       <span>${doc.uploadedByRole === 'student' ? 'Contributed By' : 'By'}: ${escapeHTML(doc.uploadedBy)}</span>
-                      <span>â€¢</span>
+                      <span>&bull;</span>
                       <span>${new Date(doc.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
@@ -2981,6 +2986,13 @@ async function renderAdminDashboardView() {
   const directoryHint = document.getElementById('admin-directory-hint');
   const tabsContainer = document.getElementById('directory-tabs');
 
+  const adminSearchInput = document.getElementById('admin-user-search-input');
+  const adminSearchClearBtn = document.getElementById('btn-admin-user-search-clear');
+  if (adminSearchInput && adminSearchClearBtn) {
+    adminSearchInput.value = adminUserSearchQuery;
+    adminSearchClearBtn.style.display = adminUserSearchQuery ? 'flex' : 'none';
+  }
+
   roleLabel.textContent = currentUser.role === 'superadmin' ? 'Super Admin' : 'Admin';
   errorAlert.style.display = 'none';
 
@@ -3004,7 +3016,7 @@ async function renderAdminDashboardView() {
         <div class="user-card">
           <div class="user-info">
             <h5>${escapeHTML(capitalizeName(u.name))}</h5>
-            <p>Phone: ${escapeHTML(u.phone)} â€¢ Requested Role: <strong style="text-transform: capitalize; color: var(--primary);">${escapeHTML(u.role)}</strong></p>
+            <p>Phone: ${escapeHTML(u.phone)} &bull; Requested Role: <strong style="text-transform: capitalize; color: var(--primary);">${escapeHTML(u.role)}</strong></p>
             <p style="font-size: 11px; margin-top: 2px;">Registered: ${new Date(u.createdAt).toLocaleString()}</p>
           </div>
           <div class="user-actions">
@@ -3057,11 +3069,29 @@ async function renderAdminDashboardView() {
     }
 
     const all = await api.getAllUsers();
-    allCount.textContent = all.length;
 
-    const adminsList = all.filter(u => u.role === 'admin' || u.role === 'superadmin');
-    const teachersList = all.filter(u => u.role === 'educator');
-    const studentsList = all.filter(u => u.role === 'student');
+    // Sort users descending by their date of joining (newest first)
+    all.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB - dateA;
+    });
+
+    let filteredUsers = all;
+    if (adminUserSearchQuery.trim()) {
+      const q = adminUserSearchQuery.toLowerCase().trim();
+      filteredUsers = all.filter(u => {
+        const name = (u.name || '').toLowerCase();
+        const phone = (u.phone || '').toLowerCase();
+        return name.includes(q) || phone.includes(q);
+      });
+    }
+
+    allCount.textContent = filteredUsers.length;
+
+    const adminsList = filteredUsers.filter(u => u.role === 'admin' || u.role === 'superadmin');
+    const teachersList = filteredUsers.filter(u => u.role === 'educator');
+    const studentsList = filteredUsers.filter(u => u.role === 'student');
 
     const renderTabs = () => {
       tabsContainer.innerHTML = `
@@ -3291,9 +3321,9 @@ async function renderAdminDashboardView() {
                     <h5 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">${escapeHTML(capitalizeName(t.name))}</h5>
                     <div class="ticket-user-meta">
                       <span class="profile-role-badge" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 6px; font-size: 10px; font-weight: 600; text-transform: capitalize;">${roleBadge}</span>
-                      <span>â€¢</span>
+                      <span>&bull;</span>
                       <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="phone" style="width: 12px; height: 12px;"></i> ${escapeHTML(t.phone)}</span>
-                      <span>â€¢</span>
+                      <span>&bull;</span>
                       <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="calendar" style="width: 12px; height: 12px;"></i> ${new Date(t.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
@@ -4070,9 +4100,9 @@ function renderFilteredMyUploads() {
                 <h5>${escapeHTML(doc.title)} <span class="user-tag" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 11px;">${displayType}</span></h5>
                 <div class="doc-meta-details">
                   <span>Subject: ${escapeHTML(doc.subject || 'General')}</span>
-                  <span>â€¢</span>
+                  <span>&bull;</span>
                   <span>Year: ${escapeHTML(doc.year || 'N/A')}</span>
-                  <span>â€¢</span>
+                  <span>&bull;</span>
                   <span>Uploaded: ${new Date(doc.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -4168,6 +4198,50 @@ function openMoveDocumentModal(docId, docTitle) {
   document.getElementById('modal-move-document').style.display = 'flex';
 }
 
+async function loadSupportHistory() {
+  const historyList = document.getElementById('support-history-list');
+  if (!historyList) return;
+
+  if (!currentUser) {
+    return;
+  }
+
+  historyList.innerHTML = '<div style="font-size: 13px; color: var(--text-muted); text-align: center; padding: 12px 0;">Loading history...</div>';
+
+  try {
+    const list = await api.getMyHelpRequests();
+    if (list.length === 0) {
+      historyList.innerHTML = '<div style="font-size: 13px; color: var(--text-muted); text-align: center; padding: 16px 0;">No support requests submitted yet.</div>';
+    } else {
+      historyList.innerHTML = list.map(item => {
+        const isResolved = item.status === 'resolved';
+        return `
+          <div style="padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background-color: var(--bg-card); display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+              <h4 style="font-size: 14px; font-weight: 700; color: var(--primary-dark); margin: 0; line-height: 1.4;">
+                Subject: ${escapeHTML(item.subject)}
+              </h4>
+              <span class="user-tag" style="margin: 0; padding: 4px 10px; font-size: 10px; font-weight: 700; border-radius: 20px; background-color: ${isResolved ? '#dcfce7' : '#fee2e2'}; color: ${isResolved ? '#166534' : '#991b1b'}; display: inline-flex; align-items: center; gap: 4px; border: 1px solid ${isResolved ? '#bbf7d0' : '#fecaca'};">
+                <i data-lucide="${isResolved ? 'check-circle' : 'clock'}" style="width: 12px; height: 12px;"></i>
+                ${isResolved ? 'Resolved' : 'Pending'}
+              </span>
+            </div>
+            <p style="font-size: 13px; color: var(--text-main); margin: 0; white-space: pre-wrap; line-height: 1.5; background-color: rgba(30, 86, 160, 0.02); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(30, 86, 160, 0.05);">${escapeHTML(item.message)}</p>
+            <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+              <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
+              Submitted: ${new Date(item.createdAt).toLocaleString()}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    console.error('Failed to load support history:', err);
+    historyList.innerHTML = '<div style="font-size: 13px; color: var(--danger); text-align: center; padding: 12px 0;">Failed to load support history.</div>';
+  }
+  refreshIcons();
+}
+
 // HELP & SUPPORT VIEW
 async function renderSupportView() {
   const errorAlert = document.getElementById('support-error-alert');
@@ -4217,6 +4291,12 @@ async function renderSupportView() {
     document.getElementById('support-subject').value = '';
     document.getElementById('support-message').value = '';
   }
+
+  const showHistoryBtn = document.getElementById('btn-show-support-history');
+  if (showHistoryBtn) {
+    showHistoryBtn.style.display = currentUser ? 'block' : 'none';
+  }
+
   refreshIcons();
 }
 
@@ -5083,6 +5163,33 @@ function initEventHandlers() {
       } else {
         e.stopPropagation();
       }
+    });
+  }
+
+  // Admin User Directory Search Events
+  const adminSearchInput = document.getElementById('admin-user-search-input');
+  const adminSearchBtn = document.getElementById('btn-admin-user-search');
+  const adminSearchClearBtn = document.getElementById('btn-admin-user-search-clear');
+
+  if (adminSearchInput && adminSearchBtn && adminSearchClearBtn) {
+    const triggerSearch = () => {
+      adminUserSearchQuery = adminSearchInput.value || '';
+      directoryVisibleCount = 5; // Reset page size on new search
+      renderAdminDashboardView();
+    };
+
+    adminSearchBtn.addEventListener('click', triggerSearch);
+    adminSearchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        triggerSearch();
+      }
+    });
+
+    adminSearchClearBtn.addEventListener('click', () => {
+      adminSearchInput.value = '';
+      adminUserSearchQuery = '';
+      directoryVisibleCount = 5; // Reset page size
+      renderAdminDashboardView();
     });
   }
 
@@ -6145,6 +6252,8 @@ function initEventHandlers() {
         // Scroll support container to top to show success alert
         const supportCard = document.querySelector('.support-card');
         if (supportCard) supportCard.scrollTop = 0;
+
+        await loadSupportHistory();
       } catch (err) {
         errorAlert.textContent = err.message || 'Failed to submit help request';
         errorAlert.style.display = 'block';
@@ -6154,6 +6263,26 @@ function initEventHandlers() {
         refreshIcons();
       }
     });
+  }
+
+  // Show History Modal Trigger
+  const btnShowHistory = document.getElementById('btn-show-support-history');
+  const modalSupportHistory = document.getElementById('modal-support-history');
+  const modalSupportHistoryClose = document.getElementById('modal-support-history-close');
+  const btnSupportHistoryClose = document.getElementById('btn-support-history-close');
+
+  if (btnShowHistory && modalSupportHistory) {
+    btnShowHistory.addEventListener('click', async () => {
+      modalSupportHistory.style.display = 'flex';
+      await loadSupportHistory();
+    });
+
+    const handleClose = () => {
+      modalSupportHistory.style.display = 'none';
+    };
+
+    if (modalSupportHistoryClose) modalSupportHistoryClose.addEventListener('click', handleClose);
+    if (btnSupportHistoryClose) btnSupportHistoryClose.addEventListener('click', handleClose);
   }
 }
 
@@ -6482,7 +6611,7 @@ async function renderTeacherDashboardView() {
                 ${isSelf ? '<span class="user-tag" style="background-color: var(--success-accent); color: var(--success); font-size: 10px; padding: 2px 6px;">You</span>' : ''}
               </h4>
               <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">
-                ${t.uploads} uploads â€¢ ${t.likes} likes
+                ${t.uploads} uploads &bull; ${t.likes} likes
               </p>
             </div>
           </div>
@@ -6527,10 +6656,10 @@ async function renderPendingContributions() {
               <div class="doc-meta">
                 <h5 style="font-size: 16px; margin-bottom: 4px; color: var(--primary-dark); font-weight: 700;">${escapeHTML(d.title)}</h5>
                 <p style="font-size: 13px; color: var(--text-main); margin-bottom: 4px;">
-                  Category: <strong>${escapeHTML(displayType)}</strong> â€¢ Subject: <strong>${escapeHTML(d.subject || 'N/A')}</strong>
+                  Category: <strong>${escapeHTML(displayType)}</strong> &bull; Subject: <strong>${escapeHTML(d.subject || 'N/A')}</strong>
                 </p>
                 <p style="font-size: 12px; color: var(--text-muted);">
-                  Contributor: <strong>${escapeHTML(d.contributorName)}</strong> (${escapeHTML(d.contributorPhone)}) â€¢ Year: ${escapeHTML(d.year || 'N/A')}
+                  Contributor: <strong>${escapeHTML(d.contributorName)}</strong> (${escapeHTML(d.contributorPhone)}) &bull; Year: ${escapeHTML(d.year || 'N/A')}
                 </p>
                 <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
                   Submitted: ${new Date(d.createdAt).toLocaleString()}
@@ -6908,10 +7037,10 @@ async function renderMyContributionsView() {
                 <div class="doc-meta">
                   <h5 style="font-size: 15px; font-weight: 700; color: var(--primary-dark); margin: 0 0 4px 0;">${escapeHTML(c.title)}</h5>
                   <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 4px 0;">
-                    Category: <strong>${escapeHTML(displayType)}</strong> â€¢ Subject: <strong>${escapeHTML(c.subject || 'N/A')}</strong>
+                    Category: <strong>${escapeHTML(displayType)}</strong> &bull; Subject: <strong>${escapeHTML(c.subject || 'N/A')}</strong>
                   </p>
                   <p style="font-size: 11px; color: var(--text-muted); margin: 0;">
-                    Submitted: ${new Date(c.createdAt).toLocaleDateString()} â€¢ Likes: ${c.likesCount}
+                    Submitted: ${new Date(c.createdAt).toLocaleDateString()} &bull; Likes: ${c.likesCount}
                   </p>
                 </div>
               </div>
