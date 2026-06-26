@@ -920,7 +920,7 @@ let editorImg = new Image(); // The original image object loaded into editor mem
 let currentNotesFolder = null;
 let currentPapersFolder = null;
 let currentResourcesFolder = null;
-let currentResourcesSection = 'root'; // 'root' | 'syllabus' | 'lab_manuals' | 'lab_manuals_folder' | 'books' | 'books_folder' | 'calculator'
+let currentResourcesSection = 'root'; // 'root' | 'syllabus' | 'lab_manuals' | 'lab_manuals_folder' | 'books' | 'books_folder' | 'competitive' | 'competitive_folder' | 'calculator'
 let roadmapFolderStack = [];
 let notesFoldersList = []; // Kept in memory to populate syllabus uploads
 let activeDirectoryTab = 'admin'; // 'admin' | 'teacher' | 'student'
@@ -2126,6 +2126,7 @@ async function renderResourcesView() {
           ${currentResourcesSection === 'syllabus' ? 'Syllabus' : ''}
           ${currentResourcesSection.startsWith('lab_manuals') ? 'Lab Manuals' : ''}
           ${currentResourcesSection.startsWith('books') ? 'Books' : ''}
+          ${currentResourcesSection.startsWith('competitive') ? 'Competitive Exam PYQs' : ''}
           ${currentResourcesSection === 'calculator' ? 'SGPA & CGPA Calculator' : ''}
         </span>
       `;
@@ -2143,12 +2144,12 @@ async function renderResourcesView() {
         <button class="btn btn-secondary" id="btn-resources-back">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Back
         </button>
-        ${(isAdmin && (currentResourcesSection === 'lab_manuals' || currentResourcesSection === 'books')) || (isStaffOrEducator && currentResourcesSection === 'roadmaps' && !currentResourcesFolder) ? `
+        ${(isAdmin && (currentResourcesSection === 'lab_manuals' || currentResourcesSection === 'books' || currentResourcesSection === 'competitive')) || (isStaffOrEducator && currentResourcesSection === 'roadmaps' && !currentResourcesFolder) ? `
           <button class="btn btn-primary" id="btn-resources-add-folder" style="display: flex; align-items: center; gap: 6px;">
             <i data-lucide="folder-plus" style="width: 18px; height: 18px;"></i> Add Folder
           </button>
         ` : ''}
-        ${(isStaff && (currentResourcesSection === 'syllabus' || currentResourcesSection === 'lab_manuals_folder' || currentResourcesSection === 'books_folder')) || (isStaffOrEducator && currentResourcesSection === 'roadmaps' && currentResourcesFolder) ? `
+        ${(isStaff && (currentResourcesSection === 'syllabus' || currentResourcesSection === 'lab_manuals_folder' || currentResourcesSection === 'books_folder' || currentResourcesSection === 'competitive_folder')) || (isStaffOrEducator && currentResourcesSection === 'roadmaps' && currentResourcesFolder) ? `
           <button class="btn btn-primary" id="btn-resources-upload" style="display: flex; align-items: center; gap: 6px;">
             <i data-lucide="plus" style="width: 18px; height: 18px;"></i> Upload PDF
           </button>
@@ -2204,6 +2205,10 @@ async function renderResourcesView() {
         docType = 'book';
         folderId = currentResourcesFolder.id;
         folderName = currentResourcesFolder.name;
+      } else if (currentResourcesSection === 'competitive_folder') {
+        docType = 'competitive';
+        folderId = currentResourcesFolder.id;
+        folderName = currentResourcesFolder.name;
       } else if (currentResourcesSection === 'roadmaps') {
         docType = 'roadmap';
         folderId = currentResourcesFolder.id;
@@ -2247,6 +2252,14 @@ async function renderResourcesView() {
           </div>
           <h3 style="color: var(--primary-dark); font-size: 20px; font-weight: 700; margin-bottom: 10px;">Roadmaps</h3>
           <p style="color: var(--text-muted); font-size: 14px;">Semester-wise maps, study routes, curriculum guides, and plans created by teachers & admins.</p>
+        </div>
+
+        <div class="card resource-card-trigger" data-section="competitive" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 30px;">
+          <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #ffe4e6; color: #e11d48; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+            <i data-lucide="award" style="width: 32px; height: 32px;"></i>
+          </div>
+          <h3 style="color: var(--primary-dark); font-size: 20px; font-weight: 700; margin-bottom: 10px;">Competitive Exam PYQs</h3>
+          <p style="color: var(--text-muted); font-size: 14px;">Previous year papers for GATE, CAT, UPSC, SSC, Banking, Defence, CUET, JEE, NEET and more.</p>
         </div>
 
         <div class="card resource-card-trigger" data-section="calculator" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 30px;">
@@ -2352,8 +2365,8 @@ async function renderResourcesView() {
       content.innerHTML = `<div class="empty-state">Error loading syllabus documents.</div>`;
     }
 
-  } else if (currentResourcesSection === 'lab_manuals' || currentResourcesSection === 'books') {
-    // Folders Grid View for Lab Manuals or Books
+  } else if (currentResourcesSection === 'lab_manuals' || currentResourcesSection === 'books' || currentResourcesSection === 'competitive') {
+    // Folders Grid View for Lab Manuals, Books or Competitive Exams
     content.innerHTML = `<div class="empty-state">Loading subject folders...</div>`;
     try {
       const folders = await api.getFolders(currentResourcesSection);
@@ -2370,11 +2383,12 @@ async function renderResourcesView() {
       }
 
       const isLab = currentResourcesSection === 'lab_manuals';
+      const isComp = currentResourcesSection === 'competitive';
       content.innerHTML = `
         <div class="folders-grid">
           ${folders.map(f => `
             <div class="folder-item resources-folder-card" data-id="${f.id}" data-name="${f.name}">
-              ${isLab ? getFolderIconSvg('#f59e0b', '#d97706') : getFolderIconSvg('#38bdf8', '#0369a1')}
+              ${isLab ? getFolderIconSvg('#f59e0b', '#d97706') : (isComp ? getFolderIconSvg('#f43f5e', '#e11d48') : getFolderIconSvg('#38bdf8', '#0369a1'))}
               <span class="folder-name">${escapeHTML(f.name)}</span>
               ${isAdmin ? `
                 <div class="folder-actions-overlay">
@@ -2391,7 +2405,13 @@ async function renderResourcesView() {
         card.addEventListener('click', (e) => {
           if (e.target.closest('.folder-actions-overlay')) return;
           currentResourcesFolder = { id: card.getAttribute('data-id'), name: card.getAttribute('data-name') };
-          currentResourcesSection = currentResourcesSection === 'lab_manuals' ? 'lab_manuals_folder' : 'books_folder';
+          if (currentResourcesSection === 'lab_manuals') {
+            currentResourcesSection = 'lab_manuals_folder';
+          } else if (currentResourcesSection === 'competitive') {
+            currentResourcesSection = 'competitive_folder';
+          } else {
+            currentResourcesSection = 'books_folder';
+          }
           renderResourcesView();
         });
       });
@@ -2430,19 +2450,25 @@ async function renderResourcesView() {
       content.innerHTML = `<div class="empty-state">Error loading folders.</div>`;
     }
 
-  } else if (currentResourcesSection === 'lab_manuals_folder' || currentResourcesSection === 'books_folder') {
-    // Documents inside specific Lab Manual or Book subject folder
+  } else if (currentResourcesSection === 'lab_manuals_folder' || currentResourcesSection === 'books_folder' || currentResourcesSection === 'competitive_folder') {
+    // Documents inside specific Lab Manual, Book or Competitive Exam folder
     content.innerHTML = `<div class="empty-state">Loading files...</div>`;
-    const docType = currentResourcesSection === 'lab_manuals_folder' ? 'lab_manual' : 'book';
+    let docType = 'book';
+    if (currentResourcesSection === 'lab_manuals_folder') {
+      docType = 'lab_manual';
+    } else if (currentResourcesSection === 'competitive_folder') {
+      docType = 'competitive';
+    }
 
     try {
       const docs = await api.getDocuments(docType, currentResourcesFolder.id);
       if (docs.length === 0) {
+        const canUpload = isStaff;
         content.innerHTML = `
           <div class="empty-state">
             <i data-lucide="file-text" style="width: 30px; height: 30px; margin-bottom: 10px; color: var(--text-muted);"></i>
             <p>No documents uploaded in this subject yet.</p>
-            ${isStaff ? '<p style="font-size: 14px; margin-top: 6px;">Click "Upload PDF" to add files.</p>' : ''}
+            ${canUpload ? '<p style="font-size: 14px; margin-top: 6px;">Click "Upload PDF" to add files.</p>' : ''}
           </div>
         `;
         refreshIcons();
@@ -2451,7 +2477,7 @@ async function renderResourcesView() {
 
       content.innerHTML = `
         <h3 style="color: var(--primary-dark); margin-bottom: 16px;">
-          Files in ${escapeHTML(currentResourcesFolder.name)} (${docType === 'lab_manual' ? 'Lab Manuals' : 'Books'})
+          Files in ${escapeHTML(currentResourcesFolder.name)} (${docType === 'lab_manual' ? 'Lab Manuals' : (docType === 'competitive' ? 'Competitive Exam PYQs' : 'Books')})
         </h3>
         <div class="docs-list">
           ${docs.map(doc => `
@@ -2713,6 +2739,9 @@ function handleResourcesBack() {
     currentResourcesFolder = null;
   } else if (currentResourcesSection === 'books_folder') {
     currentResourcesSection = 'books';
+    currentResourcesFolder = null;
+  } else if (currentResourcesSection === 'competitive_folder') {
+    currentResourcesSection = 'competitive';
     currentResourcesFolder = null;
   } else {
     currentResourcesSection = 'root';
@@ -3977,6 +4006,11 @@ function openUploadModal(docType, folderId = null, folderName = '') {
     subjectDisplayGroup.style.display = 'block';
     subjectDisplayInp.value = folderName;
     syllabusGroup.style.display = 'none';
+  } else if (docType === 'competitive') {
+    titleEl.textContent = 'Upload Competitive Exam PYQ PDF';
+    subjectDisplayGroup.style.display = 'block';
+    subjectDisplayInp.value = folderName;
+    syllabusGroup.style.display = 'none';
   } else if (docType === 'syllabus') {
     titleEl.textContent = 'Upload Syllabus PDF';
     subjectDisplayGroup.style.display = 'none';
@@ -4089,6 +4123,7 @@ function renderFilteredMyUploads() {
         else if (doc.type === 'lab_manual') displayType = 'Lab Manual';
         else if (doc.type === 'book') displayType = 'Book';
         else if (doc.type === 'syllabus') displayType = 'Syllabus';
+        else if (doc.type === 'competitive') displayType = 'Competitive Exam PYQ';
 
         return `
           <div class="doc-card">
@@ -6107,6 +6142,7 @@ function initEventHandlers() {
         else if (section === 'books') apiType = 'book';
         else if (section === 'roadmaps') apiType = 'roadmap';
         else if (section === 'syllabus') apiType = 'syllabus';
+        else if (section === 'competitive') apiType = 'competitive';
 
         saveBtnSubmit.disabled = true;
         saveBtnSubmit.textContent = 'Shifting document...';
@@ -6646,7 +6682,7 @@ async function renderPendingContributions() {
       pendingDocsContainer.innerHTML = '<div class="empty-state" style="padding: 30px;">No pending contributions to verify.</div>';
     } else {
       pendingDocsContainer.innerHTML = pendingDocs.map(d => {
-        const displayType = d.type === 'notes' ? 'Notes' : (d.type === 'paper' ? 'PYQ/Paper' : 'Lab Manual');
+        const displayType = d.type === 'notes' ? 'Notes' : (d.type === 'paper' ? 'PYQ/Paper' : (d.type === 'lab_manual' ? 'Lab Manual' : (d.type === 'book' ? 'Book' : (d.type === 'syllabus' ? 'Syllabus' : (d.type === 'roadmap' ? 'Roadmap' : (d.type === 'competitive' ? 'Competitive Exam PYQ' : d.type))))));
         return `
           <div class="doc-card pending-doc-card" style="margin-bottom: 12px;">
             <div class="doc-info">
@@ -7019,7 +7055,7 @@ async function renderMyContributionsView() {
     } else {
       if (listEl) {
         listEl.innerHTML = contributions.map(c => {
-          const displayType = c.type === 'notes' ? 'Notes' : (c.type === 'paper' ? 'PYQ/Paper' : 'Lab Manual');
+          const displayType = c.type === 'notes' ? 'Notes' : (c.type === 'paper' ? 'PYQ/Paper' : (c.type === 'lab_manual' ? 'Lab Manual' : (c.type === 'book' ? 'Book' : (c.type === 'syllabus' ? 'Syllabus' : (c.type === 'roadmap' ? 'Roadmap' : (c.type === 'competitive' ? 'Competitive Exam PYQ' : c.type))))));
           
           let statusBadge = '';
           if (c.status === 'pending') {
