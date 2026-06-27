@@ -899,6 +899,10 @@ const api = {
     return await request(`/documents/${docId}/like`, { method: 'POST' });
   },
 
+  async togglePinDocument(docId) {
+    return await request(`/documents/${docId}/pin`, { method: 'POST' });
+  },
+
   async getTeacherRanking() {
     return await request('/auth/teachers/ranking');
   },
@@ -1298,7 +1302,6 @@ async function router() {
   const fullHash = window.location.hash || '#/';
   const hash = fullHash.split('?')[0];
   const adSpace = document.getElementById('site-ad-space');
-
   if (adSpace) adSpace.style.display = 'none';
   
   // Update navbar active state
@@ -1414,7 +1417,7 @@ async function router() {
     requestAnimationFrame(() => activeView.classList.add('route-enter'));
   }
 
-  if (adSpace) adSpace.style.display = 'flex';
+  if (adSpace) adSpace.style.display = 'none';
 
   if (hash !== '#/sonic') {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1712,7 +1715,10 @@ async function renderNotesView() {
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
                 </div>
                 <div class="doc-meta">
-                  <h5>${escapeHTML(doc.title)}</h5>
+                  <h5 style="display: flex; align-items: center; gap: 6px;">
+                    ${doc.isPinned ? `<i data-lucide="pin" style="width: 14px; height: 14px; fill: var(--warning); color: var(--warning); flex-shrink: 0;" title="Pinned Document"></i>` : ''}
+                    ${escapeHTML(doc.title)}
+                  </h5>
                   <div class="doc-meta-details">
                     <span>Academic Year: ${escapeHTML(doc.year)}</span>
                     <span>&bull;</span>
@@ -1722,23 +1728,38 @@ async function renderNotesView() {
                   </div>
                 </div>
               </div>
-              <div class="doc-actions">
+              <div class="doc-actions" style="position: relative;">
                 <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="padding: 8px 12px;">
                   <i data-lucide="eye" style="width: 14px; height: 14px;"></i> View
                 </a>
                 <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm" style="padding: 8px 12px;">
                   <i data-lucide="download" style="width: 14px; height: 14px;"></i> Download
                 </a>
-                ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
-                  <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document">
-                    <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                <div class="more-options-container" style="position: relative; display: inline-block;">
+                  <button class="btn btn-secondary btn-sm btn-more-options" data-id="${doc.id}" style="padding: 8px;" title="More Options">
+                    <i data-lucide="more-vertical" style="width: 14px; height: 14px;"></i>
                   </button>
-                ` : ''}
-                ${canManageDocument(doc) ? `
-                  <button class="btn btn-danger btn-sm btn-delete-doc" data-id="${doc.id}" style="padding: 8px 12px;">
-                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                  </button>
-                ` : ''}
+                  <div class="more-options-dropdown" id="dropdown-${doc.id}">
+                    ${isStaff ? `
+                      <button class="dropdown-item btn-pin-doc" data-id="${doc.id}">
+                        <i data-lucide="pin" style="width: 14px; height: 14px; ${doc.isPinned ? 'fill: var(--warning); color: var(--warning);' : ''}"></i>
+                        <span>${doc.isPinned ? 'Unpin' : 'Pin'}</span>
+                      </button>
+                    ` : ''}
+                    ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                      <button class="dropdown-item btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}">
+                        <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                        <span>Shift</span>
+                      </button>
+                    ` : ''}
+                    ${canManageDocument(doc) ? `
+                      <button class="dropdown-item btn-delete-doc" data-id="${doc.id}">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px; color: var(--danger);"></i>
+                        <span style="color: var(--danger);">Delete</span>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
               </div>
             </div>
           `).join('')}
@@ -1985,7 +2006,10 @@ async function renderPapersView() {
                       <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
                     </div>
                     <div class="doc-meta">
-                      <h5>${escapeHTML(doc.title)}</h5>
+                      <h5 style="display: flex; align-items: center; gap: 6px;">
+                        ${doc.isPinned ? `<i data-lucide="pin" style="width: 14px; height: 14px; fill: var(--warning); color: var(--warning); flex-shrink: 0;" title="Pinned Document"></i>` : ''}
+                        ${escapeHTML(doc.title)}
+                      </h5>
                       <div class="doc-meta-details">
                         <span>Academic Year: ${escapeHTML(doc.year)}</span>
                         <span>&bull;</span>
@@ -1995,23 +2019,38 @@ async function renderPapersView() {
                       </div>
                     </div>
                   </div>
-                  <div class="doc-actions">
+                  <div class="doc-actions" style="position: relative;">
                     <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="padding: 8px 12px;">
                       <i data-lucide="eye" style="width: 14px; height: 14px;"></i> View
                     </a>
                     <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm" style="padding: 8px 12px;">
                       <i data-lucide="download" style="width: 14px; height: 14px;"></i> Download
                     </a>
-                    ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
-                      <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document">
-                        <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                    <div class="more-options-container" style="position: relative; display: inline-block;">
+                      <button class="btn btn-secondary btn-sm btn-more-options" data-id="${doc.id}" style="padding: 8px;" title="More Options">
+                        <i data-lucide="more-vertical" style="width: 14px; height: 14px;"></i>
                       </button>
-                    ` : ''}
-                    ${canManageDocument(doc) ? `
-                      <button class="btn btn-danger btn-sm btn-delete-paper" data-id="${doc.id}" style="padding: 8px 12px;">
-                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                      </button>
-                    ` : ''}
+                      <div class="more-options-dropdown" id="dropdown-${doc.id}">
+                        ${isStaff ? `
+                          <button class="dropdown-item btn-pin-doc" data-id="${doc.id}">
+                            <i data-lucide="pin" style="width: 14px; height: 14px; ${doc.isPinned ? 'fill: var(--warning); color: var(--warning);' : ''}"></i>
+                            <span>${doc.isPinned ? 'Unpin' : 'Pin'}</span>
+                          </button>
+                        ` : ''}
+                        ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                          <button class="dropdown-item btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}">
+                            <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                            <span>Shift</span>
+                          </button>
+                        ` : ''}
+                        ${canManageDocument(doc) ? `
+                          <button class="dropdown-item btn-delete-paper" data-id="${doc.id}">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px; color: var(--danger);"></i>
+                            <span style="color: var(--danger);">Delete</span>
+                          </button>
+                        ` : ''}
+                      </div>
+                    </div>
                   </div>
                 </div>
               `).join('')}
@@ -2312,7 +2351,10 @@ async function renderResourcesView() {
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
                 </div>
                 <div class="doc-meta">
-                  <h5>${escapeHTML(doc.title)}</h5>
+                  <h5 style="display: flex; align-items: center; gap: 6px;">
+                    ${doc.isPinned ? `<i data-lucide="pin" style="width: 14px; height: 14px; fill: var(--warning); color: var(--warning); flex-shrink: 0;" title="Pinned Document"></i>` : ''}
+                    ${escapeHTML(doc.title)}
+                  </h5>
                   <div class="doc-meta-details">
                     <span>Year: ${escapeHTML(doc.year)}</span>
                     <span>&bull;</span>
@@ -2320,15 +2362,34 @@ async function renderResourcesView() {
                   </div>
                 </div>
               </div>
-              <div class="doc-actions">
+              <div class="doc-actions" style="position: relative;">
                 <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
                 <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm"><i data-lucide="download" style="width:14px;height:14px;"></i> Download</a>
-                ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
-                  <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document"><i data-lucide="folder-sync" style="width:14px;height:14px;"></i></button>
-                ` : ''}
-                ${canManageDocument(doc) ? `
-                  <button class="btn btn-danger btn-sm btn-delete-resource-doc" data-id="${doc.id}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
-                ` : ''}
+                <div class="more-options-container" style="position: relative; display: inline-block;">
+                  <button class="btn btn-secondary btn-sm btn-more-options" data-id="${doc.id}" style="padding: 8px;" title="More Options">
+                    <i data-lucide="more-vertical" style="width: 14px; height: 14px;"></i>
+                  </button>
+                  <div class="more-options-dropdown" id="dropdown-${doc.id}">
+                    ${isStaff ? `
+                      <button class="dropdown-item btn-pin-doc" data-id="${doc.id}">
+                        <i data-lucide="pin" style="width: 14px; height: 14px; ${doc.isPinned ? 'fill: var(--warning); color: var(--warning);' : ''}"></i>
+                        <span>${doc.isPinned ? 'Unpin' : 'Pin'}</span>
+                      </button>
+                    ` : ''}
+                    ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                      <button class="dropdown-item btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}">
+                        <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                        <span>Shift</span>
+                      </button>
+                    ` : ''}
+                    ${canManageDocument(doc) ? `
+                      <button class="dropdown-item btn-delete-resource-doc" data-id="${doc.id}">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px; color: var(--danger);"></i>
+                        <span style="color: var(--danger);">Delete</span>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
               </div>
             </div>
           `).join('')}
@@ -2491,7 +2552,10 @@ async function renderResourcesView() {
                   <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
                 </div>
                 <div class="doc-meta">
-                  <h5>${escapeHTML(doc.title)}</h5>
+                  <h5 style="display: flex; align-items: center; gap: 6px;">
+                    ${doc.isPinned ? `<i data-lucide="pin" style="width: 14px; height: 14px; fill: var(--warning); color: var(--warning); flex-shrink: 0;" title="Pinned Document"></i>` : ''}
+                    ${escapeHTML(doc.title)}
+                  </h5>
                   <div class="doc-meta-details">
                     <span>Year: ${escapeHTML(doc.year)}</span>
                     <span>&bull;</span>
@@ -2499,15 +2563,34 @@ async function renderResourcesView() {
                   </div>
                 </div>
               </div>
-              <div class="doc-actions">
+              <div class="doc-actions" style="position: relative;">
                 <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
                 <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm"><i data-lucide="download" style="width:14px;height:14px;"></i> Download</a>
-                ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
-                  <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document"><i data-lucide="folder-sync" style="width:14px;height:14px;"></i></button>
-                ` : ''}
-                ${canManageDocument(doc) ? `
-                  <button class="btn btn-danger btn-sm btn-delete-res-item-doc" data-id="${doc.id}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
-                ` : ''}
+                <div class="more-options-container" style="position: relative; display: inline-block;">
+                  <button class="btn btn-secondary btn-sm btn-more-options" data-id="${doc.id}" style="padding: 8px;" title="More Options">
+                    <i data-lucide="more-vertical" style="width: 14px; height: 14px;"></i>
+                  </button>
+                  <div class="more-options-dropdown" id="dropdown-${doc.id}">
+                    ${isStaff ? `
+                      <button class="dropdown-item btn-pin-doc" data-id="${doc.id}">
+                        <i data-lucide="pin" style="width: 14px; height: 14px; ${doc.isPinned ? 'fill: var(--warning); color: var(--warning);' : ''}"></i>
+                        <span>${doc.isPinned ? 'Unpin' : 'Pin'}</span>
+                      </button>
+                    ` : ''}
+                    ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                      <button class="dropdown-item btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}">
+                        <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                        <span>Shift</span>
+                      </button>
+                    ` : ''}
+                    ${canManageDocument(doc) ? `
+                      <button class="dropdown-item btn-delete-res-item-doc" data-id="${doc.id}">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px; color: var(--danger);"></i>
+                        <span style="color: var(--danger);">Delete</span>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
               </div>
             </div>
           `).join('')}
@@ -2600,7 +2683,10 @@ async function renderResourcesView() {
                     <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
                   </div>
                   <div class="doc-meta">
-                    <h5>${escapeHTML(doc.title)}</h5>
+                    <h5 style="display: flex; align-items: center; gap: 6px;">
+                      ${doc.isPinned ? `<i data-lucide="pin" style="width: 14px; height: 14px; fill: var(--warning); color: var(--warning); flex-shrink: 0;" title="Pinned Document"></i>` : ''}
+                      ${escapeHTML(doc.title)}
+                    </h5>
                     <div class="doc-meta-details">
                       <span>Year: ${escapeHTML(doc.year)}</span>
                       <span>&bull;</span>
@@ -2616,15 +2702,34 @@ async function renderResourcesView() {
                   <span class="like-count" style="font-size: 12px; font-weight: 700;">${doc.likesCount || 0}</span>
                 </button>
 
-                <div class="doc-actions">
+                <div class="doc-actions" style="position: relative;">
                   <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
                   <a href="${API_BASE}/documents/download/${doc.id}?token=${localStorage.getItem('token')}" download="${escapeHTML(doc.fileName)}" class="btn btn-primary btn-sm"><i data-lucide="download" style="width:14px;height:14px;"></i> Download</a>
-                  ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
-                    <button class="btn btn-secondary btn-sm btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}" style="padding: 8px 12px;" title="Shift Document"><i data-lucide="folder-sync" style="width:14px;height:14px;"></i></button>
-                  ` : ''}
-                  ${canManageDocument(doc) ? `
-                    <button class="btn btn-danger btn-sm btn-delete-roadmap-doc" data-id="${doc.id}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
-                  ` : ''}
+                  <div class="more-options-container" style="position: relative; display: inline-block;">
+                    <button class="btn btn-secondary btn-sm btn-more-options" data-id="${doc.id}" style="padding: 8px;" title="More Options">
+                      <i data-lucide="more-vertical" style="width: 14px; height: 14px;"></i>
+                    </button>
+                    <div class="more-options-dropdown" id="dropdown-${doc.id}">
+                      ${isStaff ? `
+                        <button class="dropdown-item btn-pin-doc" data-id="${doc.id}">
+                          <i data-lucide="pin" style="width: 14px; height: 14px; ${doc.isPinned ? 'fill: var(--warning); color: var(--warning);' : ''}"></i>
+                          <span>${doc.isPinned ? 'Unpin' : 'Pin'}</span>
+                        </button>
+                      ` : ''}
+                      ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) ? `
+                        <button class="dropdown-item btn-move-doc" data-id="${doc.id}" data-title="${escapeHTML(doc.title)}">
+                          <i data-lucide="folder-sync" style="width: 14px; height: 14px;"></i>
+                          <span>Shift</span>
+                        </button>
+                      ` : ''}
+                      ${canManageDocument(doc) ? `
+                        <button class="dropdown-item btn-delete-roadmap-doc" data-id="${doc.id}">
+                          <i data-lucide="trash-2" style="width: 14px; height: 14px; color: var(--danger);"></i>
+                          <span style="color: var(--danger);">Delete</span>
+                        </button>
+                      ` : ''}
+                    </div>
+                  </div>
                 </div>
               </div>
             `).join('')}
@@ -3004,6 +3109,74 @@ function renderGPAThresholdsView(mountElement) {
   computeAndRender();
 }
 
+function showUserDeviceDetailsModal(u) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.style.zIndex = '2000';
+  modal.id = 'modal-user-device-details';
+  
+  const dev = u.deviceInfo || { browser: 'Unknown', os: 'Unknown', deviceType: 'Unknown', deviceModel: 'Unknown', ip: 'Unknown' };
+
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 500px; padding: 30px; border-radius: var(--radius-lg); position: relative; text-align: left; background: var(--card-bg); border: 1px solid var(--border-color);">
+      <button class="modal-close" id="modal-user-device-close" style="top: 15px; right: 15px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer;">&times;</button>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+        <div style="width: 45px; height: 45px; border-radius: 50%; background-color: var(--primary-accent); color: var(--primary); display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="shield-alert" style="width: 24px; height: 24px;"></i>
+        </div>
+        <div>
+          <h3 style="color: var(--primary-dark); font-size: 20px; font-weight: 800; margin: 0;">Device & Session Details</h3>
+          <p style="color: var(--text-muted); font-size: 13px; margin: 2px 0 0 0;">User: <strong>${escapeHTML(capitalizeName(u.name))}</strong></p>
+        </div>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+          <span style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Last Login</span>
+          <span style="color: var(--text-main); font-size: 13px; font-weight: 700;">${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+          <span style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Last Active</span>
+          <span style="color: var(--text-main); font-size: 13px; font-weight: 700;">${u.lastActive ? new Date(u.lastActive).toLocaleString() : 'Never'}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+          <span style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Device Type</span>
+          <span style="color: var(--text-main); font-size: 13px; font-weight: 700; text-transform: capitalize;">${escapeHTML(dev.deviceType || 'Unknown')}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+          <span style="color: var(--text-muted); font-size: 13px; font-weight: 600;">OS Used</span>
+          <span style="color: var(--text-main); font-size: 13px; font-weight: 700;">${escapeHTML(dev.os || 'Unknown')}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+          <span style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Browser</span>
+          <span style="color: var(--text-main); font-size: 13px; font-weight: 700;">${escapeHTML(dev.browser || 'Unknown')}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+          <span style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Network User (IP)</span>
+          <span style="color: var(--text-main); font-size: 13px; font-weight: 700;">${escapeHTML(dev.ip || 'Unknown')}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-bottom: 8px;">
+          <span style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Device Model / Info</span>
+          <span style="color: var(--text-main); font-size: 13px; font-weight: 700;">${escapeHTML(dev.deviceModel || 'N/A')}</span>
+        </div>
+      </div>
+      
+      <button class="btn btn-primary" id="modal-user-device-btn" style="width: 100%; margin-top: 24px; padding: 12px; font-weight: 600;">Close</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  if (window.lucide) window.lucide.createIcons();
+
+  const closeModal = () => {
+    modal.classList.add('fade-out');
+    setTimeout(() => modal.remove(), 250);
+  };
+
+  document.getElementById('modal-user-device-close').addEventListener('click', closeModal);
+  document.getElementById('modal-user-device-btn').addEventListener('click', closeModal);
+}
+
 // 5. ADMIN DASHBOARD VIEW
 async function renderAdminDashboardView() {
   const roleLabel = document.getElementById('admin-panel-role-label');
@@ -3162,7 +3335,7 @@ async function renderAdminDashboardView() {
 
         return `
           <div class="user-card" style="padding: 14px 16px;">
-            <div class="user-info">
+            <div class="user-info btn-user-details" data-id="${u.id}" style="cursor: pointer;" title="Click to view Device & Session Details">
               <h5 style="font-size: 15px; display: flex; align-items: center; gap: 6px;">
                 ${escapeHTML(capitalizeName(u.name))}
                 ${isPrimarySuperAdmin ? `
@@ -3310,6 +3483,17 @@ async function renderAdminDashboardView() {
           dirShowMoreContainer.innerHTML = '';
         }
       }
+
+      // Attach click listeners to user info block for device details modal
+      allContainer.querySelectorAll('.btn-user-details').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-id');
+          const u = selectedUsers.find(user => user.id === id);
+          if (u) {
+            showUserDeviceDetailsModal(u);
+          }
+        });
+      });
 
       refreshIcons();
     };
@@ -5235,7 +5419,45 @@ function initEventHandlers() {
   document.getElementById('footer-year').textContent = new Date().getFullYear();
 
   // Download App Modal Listeners for Desktop Navbar
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
+    // Dropdown toggle click
+    const btnMore = e.target.closest('.btn-more-options');
+    if (btnMore) {
+      e.stopPropagation();
+      const docId = btnMore.getAttribute('data-id');
+      const dropdown = document.getElementById(`dropdown-${docId}`);
+      if (dropdown) {
+        const isVisible = dropdown.style.display === 'block';
+        // Close all other dropdowns
+        document.querySelectorAll('.more-options-dropdown').forEach(el => el.style.display = 'none');
+        // Toggle this one
+        dropdown.style.display = isVisible ? 'none' : 'block';
+      }
+      return;
+    }
+
+    // Close dropdowns if clicked outside
+    if (!e.target.closest('.more-options-container')) {
+      document.querySelectorAll('.more-options-dropdown').forEach(el => el.style.display = 'none');
+    }
+
+    // Pin document click
+    const btnPin = e.target.closest('.btn-pin-doc');
+    if (btnPin) {
+      e.stopPropagation();
+      const docId = btnPin.getAttribute('data-id');
+      btnPin.disabled = true;
+      try {
+        const res = await api.togglePinDocument(docId);
+        alert(res.message || 'Updated pin status');
+        await router();
+      } catch (err) {
+        alert(err.message || 'Failed to toggle pin');
+        btnPin.disabled = false;
+      }
+      return;
+    }
+
     // Only capture triggers outside mobile menu (mobile is handled directly above)
     const trigger = e.target.closest('.desktop-nav .btn-download-app-trigger');
     if (trigger) {
